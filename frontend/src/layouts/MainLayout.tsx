@@ -1,7 +1,7 @@
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Link, Outlet, useNavigate } from "react-router-dom"
-import { LogOut, User, Building2 } from "lucide-react"
+import { LogOut, Building2 } from "lucide-react"
 
 export default function MainLayout() {
     const { data: session } = authClient.useSession()

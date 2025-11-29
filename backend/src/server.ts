@@ -11,13 +11,16 @@ config();
 
 const app = new Hono();
 
-app.use('/*', cors());
+app.use('/*', cors({
+    origin: ['http://localhost:5173'],
+    credentials: true,
+    allowMethods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+}));
 
 // Mount Better Auth handler
 app.all("/api/auth/*", async (c) => {
-    console.log("Auth request URL:", c.req.url);
     const res = await auth.handler(c.req.raw);
-    console.log("Auth response status:", res.status);
     return res;
 });
 

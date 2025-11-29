@@ -10,6 +10,8 @@ import { MaintenanceTC } from './models/Maintenance.js';
 import { AdminTC } from './models/Admin.js';
 import { ManagerTC } from './models/Manager.js';
 
+import './relations.js';
+
 const schemaComposer = new SchemaComposer();
 
 // User
