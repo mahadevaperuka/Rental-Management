@@ -10,12 +10,15 @@ import TenantSearch from './pages/tenant/Search'
 import TenantLease from './pages/tenant/Lease'
 import TenantPayments from './pages/tenant/Payments'
 import TenantMaintenance from './pages/tenant/Maintenance'
+import ManagerApplications from './pages/manager/Applications'
+import ManagerMaintenance from './pages/manager/Maintenance'
+import ManagerTenants from './pages/manager/Tenants'
 
 function App() {
   const { data: session, isPending } = authClient.useSession()
 
-  // Only show loading screen on initial load
-  if (isPending && !session) {
+  // Only show loading screen on initial load, but allow public routes to render
+  if (isPending && !session && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/register')) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>
   }
 
@@ -48,9 +51,9 @@ function App() {
         {/* Manager Routes */}
         {role === 'Manager' && (
           <Route path="manager" element={<ManagerLayout />}>
-            <Route index element={<div>Applications Review</div>} />
-            <Route path="maintenance" element={<div>Maintenance Requests</div>} />
-            <Route path="tenants" element={<div>Tenant List</div>} />
+            <Route index element={<ManagerApplications />} />
+            <Route path="maintenance" element={<ManagerMaintenance />} />
+            <Route path="tenants" element={<ManagerTenants />} />
           </Route>
         )}
 

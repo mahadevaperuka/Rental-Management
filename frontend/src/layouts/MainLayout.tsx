@@ -1,15 +1,14 @@
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
-import { Link, Outlet, useNavigate } from "react-router-dom"
+import { Link, Outlet } from "react-router-dom"
 import { LogOut, Building2 } from "lucide-react"
 
 export default function MainLayout() {
     const { data: session } = authClient.useSession()
-    const navigate = useNavigate()
 
     const handleSignOut = async () => {
         await authClient.signOut()
-        navigate("/login")
+        window.location.href = "/login"
     }
 
     return (
@@ -19,7 +18,7 @@ export default function MainLayout() {
                 <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
                         <Building2 className="h-6 w-6" />
-                        <span>LuxeLiving</span>
+                        <span>OrgLiving</span>
                     </Link>
 
                     <div className="flex items-center gap-4">
@@ -52,7 +51,7 @@ export default function MainLayout() {
             {/* Simple Footer */}
             <footer className="border-t border-gray-100 py-6 mt-auto">
                 <div className="container mx-auto px-4 text-center text-sm text-gray-400">
-                    © 2025 LuxeLiving Management. All rights reserved.
+                    © 2025 OrgLiving Management. All rights reserved.
                 </div>
             </footer>
         </div>

@@ -16,7 +16,7 @@ export const auth = betterAuth({
     basePath: "/api/auth",
     trustedOrigins: ["http://localhost:4000", "http://localhost:5173"],
     logger: {
-        level: "debug",
+        level: "error",
     },
     database: mongodbAdapter(db),
     emailAndPassword: {
