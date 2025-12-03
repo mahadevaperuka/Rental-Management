@@ -1,4 +1,3 @@
-import { gql } from "@apollo/client"
 import { useQuery, useMutation } from "@apollo/client/react"
 import { Card, CardContent } from "@/components/ui/card"
 import {
@@ -8,43 +7,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-
-const GET_MAINTENANCE_REQUESTS = gql`
-  query GetMaintenanceRequests {
-    maintenanceMany {
-      _id
-      issue_description
-      priority
-      status
-      reported_date
-      unit {
-        _id
-        apartment_no
-        community {
-            _id
-            name
-        }
-      }
-      tenant {
-        _id
-        name
-        email
-        phone
-      }
-    }
-  }
-`
-
-const UPDATE_MAINTENANCE_STATUS = gql`
-  mutation UpdateMaintenanceStatus($id: MongoID!, $status: EnumMaintenanceStatus!) {
-    maintenanceUpdateById(_id: $id, record: { status: $status }) {
-      record {
-        _id
-        status
-      }
-    }
-  }
-`
+import { GET_MAINTENANCE_REQUESTS } from "@/graphql/queries"
+import { UPDATE_MAINTENANCE_STATUS } from "@/graphql/mutations"
 
 export default function ManagerMaintenance() {
     const { data, loading, error, refetch } = useQuery<any>(GET_MAINTENANCE_REQUESTS)
@@ -65,7 +29,9 @@ export default function ManagerMaintenance() {
     if (loading) return <div className="flex justify-center p-8">Loading requests...</div>
     if (error) return <div className="text-red-500 p-8">Error loading requests: {error.message}</div>
 
-    const requests = data?.maintenanceMany || []
+    const requests = [...(data?.maintenanceMany || [])].sort((a: any, b: any) =>
+        new Date(b.reported_date).getTime() - new Date(a.reported_date).getTime()
+    )
 
     return (
         <div className="space-y-6">

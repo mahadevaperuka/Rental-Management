@@ -1,4 +1,3 @@
-import { gql } from "@apollo/client"
 import { useMutation, useQuery } from "@apollo/client/react"
 import { authClient } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,43 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Wrench, Plus, Clock, CheckCircle, XCircle } from "lucide-react"
 import { useState } from "react"
-
-// Query to get user's unit ID from their lease
-const GET_MY_UNIT_ID = gql`
-  query GetMyUnitId($filter: FilterFindManyLeaseInput) {
-    leaseMany(filter: $filter) {
-      _id
-      unit {
-        _id
-      }
-    }
-  }
-`
-
-const GET_MY_REQUESTS = gql`
-  query GetMyMaintenanceRequests($filter: FilterFindManyMaintenanceInput) {
-    maintenanceMany(filter: $filter) {
-      _id
-      title: issue_description
-      description: issue_description
-      status
-      priority
-      createdAt: reported_date
-    }
-  }
-`
-
-const CREATE_REQUEST = gql`
-  mutation CreateMaintenanceRequest($record: CreateOneMaintenanceInput!) {
-    maintenanceCreateOne(record: $record) {
-      record {
-        _id
-        issue_description
-        status
-      }
-    }
-  }
-`
+import { GET_MY_UNIT_ID, GET_MY_REQUESTS } from "@/graphql/queries"
+import { CREATE_MAINTENANCE_REQUEST } from "@/graphql/mutations"
 
 export default function TenantMaintenance() {
     const { data: session } = authClient.useSession()
@@ -55,7 +19,7 @@ export default function TenantMaintenance() {
     // Fetch unit ID first
     const { data: leaseData } = useQuery<any>(GET_MY_UNIT_ID, {
         variables: { filter: { tenant_id: (session?.user as any)?.linked_id, status: "Active" } },
-        skip: !session?.user.id
+        skip: !(session?.user as any)?.linked_id
     })
     const unitId = leaseData?.leaseMany?.[0]?.unit?._id
 
@@ -65,10 +29,10 @@ export default function TenantMaintenance() {
                 tenant_id: (session?.user as any)?.linked_id
             }
         },
-        skip: !session?.user.id
+        skip: !(session?.user as any)?.linked_id
     })
 
-    const [createRequest, { loading: creating }] = useMutation(CREATE_REQUEST, {
+    const [createRequest, { loading: creating }] = useMutation(CREATE_MAINTENANCE_REQUEST, {
         onCompleted: () => {
             setIsCreating(false)
             setTitle("")
@@ -104,15 +68,23 @@ export default function TenantMaintenance() {
     if (loading) return <div className="flex justify-center p-8">Loading requests...</div>
     if (error) return <div className="text-red-500 p-8">Error loading requests: {error.message}</div>
 
-    const requests = data?.maintenanceMany || []
+    const requests = [...(data?.maintenanceMany || [])].sort((a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    )
 
     return (
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <h1 className="text-2xl font-bold tracking-tight">Maintenance Requests</h1>
-                <Button onClick={() => setIsCreating(!isCreating)} className="gap-2">
-                    {isCreating ? "Cancel" : <><Plus className="h-4 w-4" /> New Request</>}
-                </Button>
+                {unitId ? (
+                    <Button onClick={() => setIsCreating(!isCreating)} className="gap-2">
+                        {isCreating ? "Cancel" : <><Plus className="h-4 w-4" /> New Request</>}
+                    </Button>
+                ) : (
+                    <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-md">
+                        Active lease required to submit requests
+                    </div>
+                )}
             </div>
 
             {isCreating && (

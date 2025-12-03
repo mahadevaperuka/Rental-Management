@@ -33,6 +33,15 @@ export const auth = betterAuth({
             linked_id: {
                 type: "string",
                 required: false
+            },
+            image: {
+                type: "string",
+                required: false
+            },
+            is_temp_password: {
+                type: "boolean",
+                required: false,
+                defaultValue: false
             }
         }
     }

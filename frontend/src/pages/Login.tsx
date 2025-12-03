@@ -25,7 +25,7 @@ export default function Login() {
                 password,
             }, {
                 onSuccess: () => {
-                    navigate("/")
+                    navigate("/dashboard")
                 },
                 onError: (ctx) => {
                     setError(ctx.error.message)
@@ -83,6 +83,11 @@ export default function Login() {
                             Don't have an account?{" "}
                             <Link to="/register" className="text-black underline hover:text-gray-700">
                                 Sign up
+                            </Link>
+                        </div>
+                        <div className="text-sm text-center">
+                            <Link to="/" className="text-gray-500 hover:text-gray-700">
+                                Back to Home
                             </Link>
                         </div>
                     </CardFooter>

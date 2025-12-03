@@ -8,7 +8,7 @@ export default function MainLayout() {
 
     const handleSignOut = async () => {
         await authClient.signOut()
-        window.location.href = "/login"
+        window.location.href = "/"
     }
 
     return (

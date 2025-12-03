@@ -5,6 +5,7 @@ import { z } from 'zod';
 export const CommunityZod = z.object({
     name: z.string(),
     location: z.string(),
+    description: z.string().optional(),
     manager: z.object({
         manager_id: z.instanceof(mongoose.Types.ObjectId),
         name: z.string(),
@@ -19,6 +20,7 @@ export type Community = z.infer<typeof CommunityZod> & Document;
 const CommunitySchema = new Schema<Community>({
     name: { type: String, required: true },
     location: { type: String, required: true },
+    description: { type: String },
     manager: {
         manager_id: { type: Schema.Types.ObjectId, required: true },
         name: { type: String, required: true },

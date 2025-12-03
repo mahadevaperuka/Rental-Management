@@ -29,7 +29,7 @@ export default function Register() {
                 // For public registration, it should be Tenant.
             }, {
                 onSuccess: () => {
-                    navigate("/")
+                    navigate("/dashboard")
                 },
                 onError: (ctx) => {
                     setError(ctx.error.message)
@@ -98,6 +98,11 @@ export default function Register() {
                             Already have an account?{" "}
                             <Link to="/login" className="text-black underline hover:text-gray-700">
                                 Sign in
+                            </Link>
+                        </div>
+                        <div className="text-sm text-center">
+                            <Link to="/" className="text-gray-500 hover:text-gray-700">
+                                Back to Home
                             </Link>
                         </div>
                     </CardFooter>

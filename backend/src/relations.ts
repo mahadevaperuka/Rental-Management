@@ -7,6 +7,23 @@ import { PaymentTC } from './models/Payment.js';
 import { ApplicationTC } from './models/Application.js';
 import { ManagerTC } from './models/Manager.js';
 
+// Community Relations
+CommunityTC.addRelation('unitCount', {
+    resolver: () => UnitTC.getResolver('count'),
+    prepareArgs: {
+        filter: (source: any) => ({ community_id: source._id }),
+    },
+    projection: { _id: 1 },
+});
+
+CommunityTC.addRelation('units', {
+    resolver: () => UnitTC.getResolver('findMany'),
+    prepareArgs: {
+        filter: (source: any) => ({ community_id: source._id }),
+    },
+    projection: { _id: 1 },
+});
+
 // Unit Relations
 UnitTC.addRelation('community', {
     resolver: () => CommunityTC.getResolver('findById'),

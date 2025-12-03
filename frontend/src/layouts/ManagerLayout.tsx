@@ -1,25 +1,16 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { ClipboardList, Wrench, Users, Building2 } from "lucide-react"
+import { ClipboardList, Wrench, Users, Building2, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { gql } from "@apollo/client"
 import { useQuery } from "@apollo/client/react"
 import { authClient } from "@/lib/auth-client"
-
-const GET_MY_COMMUNITY = gql`
-  query GetMyCommunity($id: MongoID!) {
-    managerById(_id: $id) {
-      community {
-        name
-        location
-      }
-    }
-  }
-`
+import { GET_MY_COMMUNITY } from "@/graphql/queries"
 
 const sidebarItems = [
+    { icon: Building2, label: "Community", href: "/manager/community" },
     { icon: ClipboardList, label: "Applications", href: "/manager" },
     { icon: Wrench, label: "Maintenance", href: "/manager/maintenance" },
     { icon: Users, label: "Tenants", href: "/manager/tenants" },
+    { icon: Home, label: "Units", href: "/manager/units" },
 ]
 
 export default function ManagerLayout() {

@@ -7,8 +7,9 @@ export const UserZod = z.object({
     email: z.email(),
     emailVerified: z.boolean().default(false),
     image: z.string().optional(),
-    role: z.enum(['Admin', 'Tenant', 'Manager']).default('Tenant'),
+    role: z.enum(['Admin', 'Tenant', 'Manager', 'Guest']).default('Tenant'),
     linked_id: z.instanceof(mongoose.Types.ObjectId).optional(),
+    is_temp_password: z.boolean().default(false),
     createdAt: z.date().default(() => new Date()),
     updatedAt: z.date().default(() => new Date()),
     last_login: z.date().optional(),
@@ -17,13 +18,15 @@ export const UserZod = z.object({
 export type User = z.infer<typeof UserZod> & Document;
 
 const UserSchema = new Schema<User>({
+    // _id is automatically ObjectId by default in Mongoose
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     // password field removed as it is stored in 'account' collection by better-auth
     emailVerified: { type: Boolean, default: false },
     image: { type: String },
-    role: { type: String, enum: ['Admin', 'Tenant', 'Manager'], default: 'Tenant' },
+    role: { type: String, enum: ['Admin', 'Tenant', 'Manager', 'Guest'], default: 'Tenant' },
     linked_id: { type: Schema.Types.ObjectId },
+    is_temp_password: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
     last_login: { type: Date },

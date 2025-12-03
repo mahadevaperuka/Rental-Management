@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
     { icon: Search, label: "Find Home", href: "/tenant" },
+    { icon: FileText, label: "Applications", href: "/tenant/applications" },
     { icon: FileText, label: "My Lease", href: "/tenant/lease" },
     { icon: CreditCard, label: "Payments", href: "/tenant/payments" },
     { icon: Wrench, label: "Maintenance", href: "/tenant/maintenance" },

@@ -9,6 +9,9 @@ import { PaymentTC } from './models/Payment.js';
 import { MaintenanceTC } from './models/Maintenance.js';
 import { AdminTC } from './models/Admin.js';
 import { ManagerTC } from './models/Manager.js';
+import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver } from './resolvers/customUserResolvers.js';
+import { acceptApplicationResolver } from './resolvers/customApplicationResolvers.js';
+import { filterByManager } from './resolvers/managerResolvers.js';
 
 import './relations.js';
 
@@ -34,23 +37,30 @@ schemaComposer.Mutation.addFields({
   userRemoveById: UserTC.getResolver('removeById'),
   userRemoveOne: UserTC.getResolver('removeOne'),
   userRemoveMany: UserTC.getResolver('removeMany'),
+  userCreateAccount: createUserAccountResolver,
+  userUpdateAccount: updateUserAccountResolver,
+  userDeleteAccount: deleteUserAccountResolver,
+  userCompleteTempPassword: completeTempPasswordResolver,
 });
 
 // Community
 schemaComposer.Query.addFields({
   communityById: CommunityTC.getResolver('findById'),
   communityMany: CommunityTC.getResolver('findMany'),
+  communityCount: CommunityTC.getResolver('count'),
 });
 
 schemaComposer.Mutation.addFields({
   communityCreateOne: CommunityTC.getResolver('createOne'),
   communityUpdateById: CommunityTC.getResolver('updateById'),
+  communityRemoveById: CommunityTC.getResolver('removeById'),
 });
 
 // Unit
 schemaComposer.Query.addFields({
   unitById: UnitTC.getResolver('findById'),
   unitMany: UnitTC.getResolver('findMany'),
+  unitCount: UnitTC.getResolver('count'),
 });
 
 schemaComposer.Mutation.addFields({
@@ -61,18 +71,21 @@ schemaComposer.Mutation.addFields({
 // Application
 schemaComposer.Query.addFields({
   applicationById: ApplicationTC.getResolver('findById'),
-  applicationMany: ApplicationTC.getResolver('findMany'),
+  applicationMany: ApplicationTC.getResolver('findMany').withMiddlewares([filterByManager]),
 });
 
 schemaComposer.Mutation.addFields({
   applicationCreateOne: ApplicationTC.getResolver('createOne'),
   applicationUpdateById: ApplicationTC.getResolver('updateById'),
+  applicationRemoveById: ApplicationTC.getResolver('removeById'),
+  acceptApplication: acceptApplicationResolver,
 });
 
 // Tenant
 schemaComposer.Query.addFields({
   tenantById: TenantTC.getResolver('findById'),
-  tenantMany: TenantTC.getResolver('findMany'),
+  tenantMany: TenantTC.getResolver('findMany').withMiddlewares([filterByManager]),
+  tenantCount: TenantTC.getResolver('count'),
 });
 
 schemaComposer.Mutation.addFields({
@@ -105,7 +118,7 @@ schemaComposer.Mutation.addFields({
 // Maintenance
 schemaComposer.Query.addFields({
   maintenanceById: MaintenanceTC.getResolver('findById'),
-  maintenanceMany: MaintenanceTC.getResolver('findMany'),
+  maintenanceMany: MaintenanceTC.getResolver('findMany').withMiddlewares([filterByManager]),
 });
 
 schemaComposer.Mutation.addFields({

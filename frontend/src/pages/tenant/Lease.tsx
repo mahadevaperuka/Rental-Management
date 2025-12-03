@@ -1,31 +1,8 @@
-import { gql } from "@apollo/client"
 import { useQuery } from "@apollo/client/react"
 import { authClient } from "@/lib/auth-client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, CreditCard, FileText, Home } from "lucide-react"
-
-const GET_MY_LEASE = gql`
-  query GetMyLease($filter: FilterFindManyLeaseInput) {
-    leaseMany(filter: $filter) {
-      _id
-      start_date
-      end_date
-      monthly_rent
-      status
-      unit {
-        _id
-        apartment_no
-        bedrooms
-        bathrooms
-        community {
-          _id
-          name
-          location
-        }
-      }
-    }
-  }
-`
+import { GET_MY_LEASE } from "@/graphql/queries"
 
 export default function TenantLease() {
     const { data: session } = authClient.useSession()
@@ -35,7 +12,7 @@ export default function TenantLease() {
                 tenant_id: (session?.user as any)?.linked_id
             }
         },
-        skip: !session?.user.id
+        skip: !(session?.user as any)?.linked_id
     })
 
     if (loading) return <div className="flex justify-center p-8">Loading lease details...</div>
