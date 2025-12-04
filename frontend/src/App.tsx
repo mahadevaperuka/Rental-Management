@@ -75,7 +75,7 @@ function App() {
         )}
 
         {/* Tenant Routes */}
-        {(role === 'Tenant' || !role) && (
+        {(role === 'Tenant' || role === 'Guest' || !role) && (
           <Route path="/tenant" element={<TenantLayout />}>
             <Route index element={<TenantSearch />} />
             <Route path="applications" element={<TenantApplications />} />

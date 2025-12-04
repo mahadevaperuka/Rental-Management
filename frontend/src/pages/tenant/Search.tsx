@@ -133,7 +133,7 @@ export default function TenantSearch() {
                                         <img
                                             src={unit.images[0]}
                                             alt={`Unit ${unit.apartment_no} `}
-                                            className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                                            className="w-full h-full object-cover"
                                         />
                                     ) : (
                                         <div className="flex items-center justify-center h-full text-gray-400">

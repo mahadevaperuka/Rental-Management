@@ -28,7 +28,7 @@ export const auth = betterAuth({
             role: {
                 type: "string",
                 required: false,
-                defaultValue: "Tenant"
+                defaultValue: "Guest"
             },
             linked_id: {
                 type: "string",
