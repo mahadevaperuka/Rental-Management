@@ -1,6 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
 import { chatbotService } from '../chatbot/service.js';
-import { z } from 'zod';
 
 const ChatResponseTC = schemaComposer.createObjectTC({
     name: 'ChatResponse',

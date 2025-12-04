@@ -12,7 +12,7 @@ import { ManagerTC } from './models/Manager.js';
 import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver } from './resolvers/customUserResolvers.js';
 import { acceptApplicationResolver } from './resolvers/customApplicationResolvers.js';
 import { filterByManager } from './resolvers/managerResolvers.js';
-
+import { chatResolver } from './resolvers/chatResolvers.js';
 import './relations.js';
 
 const schemaComposer = new SchemaComposer();
@@ -143,9 +143,6 @@ schemaComposer.Query.addFields({
   managerMany: ManagerTC.getResolver('findMany'),
 });
 
-import { chatResolver } from './resolvers/chatResolvers.js';
-
-// ...
 
 schemaComposer.Mutation.addFields({
   managerCreateOne: ManagerTC.getResolver('createOne'),
