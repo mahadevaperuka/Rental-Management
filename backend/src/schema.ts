@@ -143,9 +143,14 @@ schemaComposer.Query.addFields({
   managerMany: ManagerTC.getResolver('findMany'),
 });
 
+import { chatResolver } from './resolvers/chatResolvers.js';
+
+// ...
+
 schemaComposer.Mutation.addFields({
   managerCreateOne: ManagerTC.getResolver('createOne'),
   managerUpdateById: ManagerTC.getResolver('updateById'),
+  chat: chatResolver,
 });
 
 export const schema = schemaComposer.buildSchema();
