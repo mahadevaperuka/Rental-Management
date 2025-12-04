@@ -2,6 +2,7 @@ import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Link, Outlet } from "react-router-dom"
 import { LogOut, Building2 } from "lucide-react"
+import { ChatWidget } from "@/components/ChatWidget"
 
 export default function MainLayout() {
     const { data: session } = authClient.useSession()
@@ -54,6 +55,9 @@ export default function MainLayout() {
                     © 2025 OrgLiving Management. All rights reserved.
                 </div>
             </footer>
+
+            {/* Chat Widget */}
+            {session && <ChatWidget />}
         </div>
     )
 }

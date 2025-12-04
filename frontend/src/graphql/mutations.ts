@@ -236,6 +236,15 @@ export const ACCEPT_APPLICATION = gql`
 }
 `;
 
+export const CHAT = gql`
+  mutation Chat($message: String!) {
+    chat(message: $message) {
+      message
+      data
+    }
+  }
+`;
+
 export const CREATE_PAYMENT = gql`
   mutation CreatePayment($record: CreateOnePaymentInput!) {
     paymentCreateOne(record: $record) {
