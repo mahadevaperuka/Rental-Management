@@ -5,6 +5,7 @@ import { auth } from '../auth.js';
 import { TenantModel } from '../models/Tenant.js';
 import { ManagerModel } from '../models/Manager.js';
 import { UserModel } from '../models/User.js';
+import { LeaseModel } from '../models/Lease.js';
 
 export const createUserAccountResolver = schemaComposer.createResolver({
     name: 'createUserAccount',
@@ -168,19 +169,22 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
     resolve: async ({ args }: { args: any }) => {
         const { _id } = args;
         try {
-            const user = await UserModel.findById(_id);
+            console.log({ _id })
+            const user = await UserModel.findOne({ linked_id: _id });
             if (!user) throw new Error("User not found");
 
             const { email, role } = user;
+            console.log({ email, role })
 
             // Delete User
-            await UserModel.findByIdAndDelete(_id);
+            await UserModel.findOneAndDelete({ linked_id: _id });
 
             // Delete Profile
             if (role === 'Manager') {
                 await ManagerModel.findOneAndDelete({ email });
             } else if (role === 'Tenant') {
                 await TenantModel.findOneAndDelete({ email });
+                await LeaseModel.findOneAndDelete({ tenant_id: _id });
             }
 
             return user;
