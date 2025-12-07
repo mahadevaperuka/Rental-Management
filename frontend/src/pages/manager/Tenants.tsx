@@ -33,14 +33,17 @@ export default function ManagerTenants() {
         }
     })
 
+    const [errorDialog, setErrorDialog] = useState<string | null>(null)
+
     const handleDelete = async (tenantId: string) => {
         if (confirm("Are you sure you want to delete this tenant? This action cannot be undone.")) {
             try {
                 await deleteTenant({
                     variables: { _id: tenantId }
                 })
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to delete tenant:", err)
+                setErrorDialog(err.message || "Failed to delete tenant. Please try again.")
             }
         }
     }
@@ -271,6 +274,20 @@ export default function ManagerTenants() {
                     )}
                 </DialogContent>
             </Dialog>
-        </div>
+
+            <Dialog open={!!errorDialog} onOpenChange={(open) => !open && setErrorDialog(null)}>
+                <DialogContent className="bg-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">Action Failed</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-gray-700">{errorDialog}</p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setErrorDialog(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     )
 }

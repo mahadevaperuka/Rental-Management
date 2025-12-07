@@ -6,6 +6,7 @@ import { TenantModel } from '../models/Tenant.js';
 import { ManagerModel } from '../models/Manager.js';
 import { UserModel } from '../models/User.js';
 import { LeaseModel } from '../models/Lease.js';
+import { UnitModel } from '../models/Unit.js';
 
 export const createUserAccountResolver = schemaComposer.createResolver({
     name: 'createUserAccount',
@@ -173,21 +174,67 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
             const user = await UserModel.findOne({ linked_id: _id });
             if (!user) throw new Error("User not found");
 
-            const { email, role } = user;
+            const { email, role, linked_id } = user;
             console.log({ email, role })
 
-            // Delete User
-            await UserModel.findOneAndDelete({ linked_id: _id });
+            if (role === 'Tenant') {
+                const tenantId = linked_id;
 
-            // Delete Profile
-            if (role === 'Manager') {
-                await ManagerModel.findOneAndDelete({ email });
-            } else if (role === 'Tenant') {
-                await TenantModel.findOneAndDelete({ email });
-                await LeaseModel.findOneAndDelete({ tenant_id: _id });
+                // 1. Check for Active Leases
+                const activeLeases = await LeaseModel.find({
+                    tenant_id: tenantId,
+                    status: 'Active'
+                }).populate('apartment_id'); // We need unit details for error message
+
+                if (activeLeases.length > 0) {
+                    const leaseDetails = activeLeases.map((lease: any) => {
+                        // Type assertion or check needed if populating. Assuming populated correctly.
+                        // apartment_id is ref to Unit.
+                        // We also need Community name? Unit has community_id ref.
+                        return `Unit ${lease.apartment_id?.apartment_no}`;
+                    }).join(", ");
+
+                    // To get Community Name, we might need deep populate or just fetch Unit separately if populate fails deep.
+                    // Let's do a more robust fetch for error generation.
+                    const details = [];
+                    for (const lease of activeLeases) {
+                        const unit = await UnitModel.findById(lease.apartment_id).populate('community_id');
+                        const communityName = (unit?.community_id as any)?.name || 'Unknown Community';
+                        const unitNo = unit?.apartment_no || 'Unknown Unit';
+                        details.push(`Unit ${unitNo} in ${communityName}`);
+                    }
+
+                    throw new Error(`Active lease(s) exist: ${details.join(', ')}. Please terminate them before modifying the tenant.`);
+                }
+
+                // 2. Safe Demotion (No Active Leases)
+
+                const tenant = await TenantModel.findById(tenantId);
+                if (tenant?.current_apartment_id) {
+                    await UnitModel.findByIdAndUpdate(tenant.current_apartment_id, { status: 'Available' });
+                }
+
+                // Update Tenant Profile - Clear associations
+                await TenantModel.findByIdAndUpdate(tenantId, {
+                    current_apartment_id: null,
+                    lease_id: null
+                });
+
+                // Update User Role to Guest
+                user.role = 'Guest';
+                // user.linked_id remains set to tenantId
+                await user.save();
+
+                return user;
+
+            } else {
+                // Need to be verified
+                if (role === 'Manager') {
+                    await ManagerModel.findOneAndDelete({ email });
+                }
+
+                return user;
             }
-
-            return user;
         } catch (error: any) {
             console.error("Error deleting user account:", error);
             throw new Error(error.message || "Failed to delete user account");
