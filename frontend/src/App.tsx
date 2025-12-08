@@ -59,7 +59,6 @@ function App() {
             <Route index element={<AdminOverview />} />
             <Route path="communities" element={<AdminCommunities />} />
             <Route path="users" element={<AdminUsers />} />
-            <Route path="settings" element={<div>Settings</div>} />
           </Route>
         )}
 

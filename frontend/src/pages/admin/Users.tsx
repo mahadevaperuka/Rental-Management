@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { User, ShieldCheck, ShieldAlert, Search, Plus } from "lucide-react"
 import {
@@ -26,7 +27,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { GET_USERS } from "@/graphql/queries"
-import { CREATE_USER, DELETE_USER, UPDATE_USER } from "@/graphql/mutations"
+import { CREATE_USER, DELETE_USER, UPDATE_USER, UPDATE_LEASE } from "@/graphql/mutations"
 
 
 export default function AdminUsers() {
@@ -50,14 +51,17 @@ export default function AdminUsers() {
         }
     })
 
+    const [errorDialog, setErrorDialog] = useState<string | null>(null)
+
     const handleDelete = async (userId: string) => {
         if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
             try {
                 await deleteUser({
                     variables: { _id: userId }
                 })
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to delete user:", err)
+                setErrorDialog(err.message || "Failed to delete user. Please try again.")
             }
         }
     }
@@ -114,6 +118,55 @@ export default function AdminUsers() {
             refetch()
         } catch (err) {
             console.error("Failed to update user:", err)
+        }
+    }
+
+    // Lease Editing Logic
+    const [updateLease, { loading: updatingLease }] = useMutation(UPDATE_LEASE, {
+        onCompleted: () => {
+            setIsLeaseEditOpen(false)
+            setEditingLease(null)
+            refetch()
+        }
+    })
+
+    const [editingLease, setEditingLease] = useState<any>(null)
+    const [isLeaseEditOpen, setIsLeaseEditOpen] = useState(false)
+
+    const handleLeaseEditClick = (user: any) => {
+        const lease = user.tenant_profile?.lease;
+        if (!lease) {
+            alert("This user does not have an active lease to edit.")
+            return
+        }
+        setEditingLease({
+            _id: lease._id,
+            start_date: lease.start_date.split('T')[0],
+            end_date: lease.end_date.split('T')[0],
+            monthly_rent: lease.monthly_rent,
+            security_deposit: lease.security_deposit,
+            status: lease.status
+        })
+        setIsLeaseEditOpen(true)
+    }
+
+    const handleUpdateLease = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editingLease) return
+
+        try {
+            await updateLease({
+                variables: {
+                    _id: editingLease._id,
+                    start_date: new Date(editingLease.start_date).toISOString(),
+                    end_date: new Date(editingLease.end_date).toISOString(),
+                    monthly_rent: parseFloat(editingLease.monthly_rent),
+                    security_deposit: parseFloat(editingLease.security_deposit),
+                    status: editingLease.status
+                }
+            })
+        } catch (err) {
+            console.error("Failed to update lease:", err)
         }
     }
 
@@ -196,12 +249,21 @@ export default function AdminUsers() {
                             <TableCell>
                                 {user.role !== 'Admin' && (
                                     <div className="flex items-center gap-2">
+                                        {user.role === 'Tenant' && user.tenant_profile?.lease && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => handleLeaseEditClick(user)}
+                                            >
+                                                Edit Lease
+                                            </Button>
+                                        )}
                                         <Button
                                             size="sm"
                                             variant="outline"
                                             onClick={() => handleEditClick(user)}
                                         >
-                                            Edit
+                                            Edit User
                                         </Button>
                                         <Button
                                             size="sm"
@@ -377,6 +439,99 @@ export default function AdminUsers() {
                     </CardContent>
                 </Card>
             </Tabs>
-        </div>
+
+            <Dialog open={isLeaseEditOpen} onOpenChange={setIsLeaseEditOpen}>
+                <DialogContent className="bg-white">
+                    <DialogHeader>
+                        <DialogTitle>Edit Lease Details</DialogTitle>
+                    </DialogHeader>
+                    {editingLease && (
+                        <form onSubmit={handleUpdateLease}>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="start-date">Start Date</Label>
+                                        <Input
+                                            id="start-date"
+                                            type="date"
+                                            value={editingLease.start_date}
+                                            onChange={(e) => setEditingLease({ ...editingLease, start_date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="end-date">End Date</Label>
+                                        <Input
+                                            id="end-date"
+                                            type="date"
+                                            value={editingLease.end_date}
+                                            onChange={(e) => setEditingLease({ ...editingLease, end_date: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="rent">Monthly Rent ($)</Label>
+                                        <Input
+                                            id="rent"
+                                            type="number"
+                                            value={editingLease.monthly_rent}
+                                            onChange={(e) => setEditingLease({ ...editingLease, monthly_rent: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="deposit">Security Deposit ($)</Label>
+                                        <Input
+                                            id="deposit"
+                                            type="number"
+                                            value={editingLease.security_deposit}
+                                            onChange={(e) => setEditingLease({ ...editingLease, security_deposit: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select
+                                        value={editingLease.status}
+                                        onValueChange={(value) => setEditingLease({ ...editingLease, status: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-white">
+                                            <SelectItem value="Active">Active</SelectItem>
+                                            <SelectItem value="Terminated">Terminated</SelectItem>
+                                            <SelectItem value="Expired">Expired</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={updatingLease}>
+                                    {updatingLease ? "Saving..." : "Save Changes"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!errorDialog} onOpenChange={(open) => !open && setErrorDialog(null)}>
+                <DialogContent className="bg-white">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-600">Action Failed</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-gray-700">{errorDialog}</p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setErrorDialog(null)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div >
     )
 }

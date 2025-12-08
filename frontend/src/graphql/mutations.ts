@@ -55,6 +55,7 @@ export const DELETE_TENANT = gql`
   mutation DeleteTenant($_id: MongoID!) {
     userDeleteAccount(_id: $_id) {
       _id
+      name
     }
   }
 `;

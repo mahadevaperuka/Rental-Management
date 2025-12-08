@@ -6,6 +6,7 @@ import { MaintenanceTC } from './models/Maintenance.js';
 import { PaymentTC } from './models/Payment.js';
 import { ApplicationTC } from './models/Application.js';
 import { ManagerTC } from './models/Manager.js';
+import { UserTC } from './models/User.js';
 
 // Community Relations
 CommunityTC.addRelation('unitCount', {
@@ -109,4 +110,13 @@ ManagerTC.addRelation('community', {
         filter: (source: any) => ({ "manager.manager_id": source._id }),
     },
     projection: { _id: 1 },
+});
+
+// User Relations
+UserTC.addRelation('tenant_profile', {
+    resolver: () => TenantTC.getResolver('findById'),
+    prepareArgs: {
+        _id: (source: any) => source.linked_id,
+    },
+    projection: { linked_id: 1 },
 });

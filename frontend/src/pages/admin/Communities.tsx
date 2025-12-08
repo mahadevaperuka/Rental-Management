@@ -218,11 +218,18 @@ export default function AdminCommunities() {
                                             <SelectValue placeholder="Select a manager" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {managers.map((manager: any) => (
-                                                <SelectItem key={manager._id} value={manager._id}>
-                                                    {manager.name} ({manager.email})
-                                                </SelectItem>
-                                            ))}
+                                            {managers.map((manager: any) => {
+                                                const isAssigned = manager.community && manager.community._id;
+                                                const isCurrentManager = selectedManagerId === manager._id;
+
+                                                if (isAssigned && !isCurrentManager) return null;
+
+                                                return (
+                                                    <SelectItem key={manager._id} value={manager._id}>
+                                                        {manager.name} ({manager.email})
+                                                    </SelectItem>
+                                                )
+                                            })}
                                         </SelectContent>
                                     </Select>
                                 </div>

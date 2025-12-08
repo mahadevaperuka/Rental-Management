@@ -7,8 +7,19 @@ export const GET_USERS = gql`
       name
       email
       role
-      createdAt
+    createdAt
       last_login
+      tenant_profile {
+        _id
+        lease {
+          _id
+          start_date
+          end_date
+          monthly_rent
+          security_deposit
+          status
+        }
+      }
     }
   }
 `;
@@ -61,6 +72,10 @@ export const GET_COMMUNITIES_AND_MANAGERS = gql`
       name
       email
       phone
+      community {
+        _id
+        name
+      }
     }
   }
 `;

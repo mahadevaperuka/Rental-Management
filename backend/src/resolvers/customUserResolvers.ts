@@ -7,6 +7,7 @@ import { ManagerModel } from '../models/Manager.js';
 import { UserModel } from '../models/User.js';
 import { LeaseModel } from '../models/Lease.js';
 import { UnitModel } from '../models/Unit.js';
+import { CommunityModel } from '../models/Community.js';
 
 export const createUserAccountResolver = schemaComposer.createResolver({
     name: 'createUserAccount',
@@ -170,32 +171,26 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
     resolve: async ({ args }: { args: any }) => {
         const { _id } = args;
         try {
-            console.log({ _id })
-            const user = await UserModel.findOne({ linked_id: _id });
+            // console.log({ _id })
+            const user = await UserModel.findOne({ _id });
             if (!user) throw new Error("User not found");
 
-            const { email, role, linked_id } = user;
-            console.log({ email, role })
+            const { name, email, role, linked_id } = user;
+            // console.log({ name, email, role })
 
             if (role === 'Tenant') {
                 const tenantId = linked_id;
 
-                // 1. Check for Active Leases
                 const activeLeases = await LeaseModel.find({
                     tenant_id: tenantId,
                     status: 'Active'
-                }).populate('apartment_id'); // We need unit details for error message
+                }).populate('apartment_id');
 
                 if (activeLeases.length > 0) {
-                    const leaseDetails = activeLeases.map((lease: any) => {
-                        // Type assertion or check needed if populating. Assuming populated correctly.
-                        // apartment_id is ref to Unit.
-                        // We also need Community name? Unit has community_id ref.
-                        return `Unit ${lease.apartment_id?.apartment_no}`;
-                    }).join(", ");
+                    // const leaseDetails = activeLeases.map((lease: any) => {
+                    //     return `Unit ${lease.apartment_id?.apartment_no}`;
+                    // }).join(", ");
 
-                    // To get Community Name, we might need deep populate or just fetch Unit separately if populate fails deep.
-                    // Let's do a more robust fetch for error generation.
                     const details = [];
                     for (const lease of activeLeases) {
                         const unit = await UnitModel.findById(lease.apartment_id).populate('community_id');
@@ -206,14 +201,11 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
 
                     throw new Error(`Active lease(s) exist: ${details.join(', ')}. Please terminate them before modifying the tenant.`);
                 }
-
                 // 2. Safe Demotion (No Active Leases)
-
                 const tenant = await TenantModel.findById(tenantId);
                 if (tenant?.current_apartment_id) {
                     await UnitModel.findByIdAndUpdate(tenant.current_apartment_id, { status: 'Available' });
                 }
-
                 // Update Tenant Profile - Clear associations
                 await TenantModel.findByIdAndUpdate(tenantId, {
                     current_apartment_id: null,
@@ -228,9 +220,20 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
                 return user;
 
             } else {
-                // Need to be verified
                 if (role === 'Manager') {
+                    // Check if manager is assigned to any community
+                    const managingCommunities = await CommunityModel.find({ 'manager.manager_id': linked_id });
+
+                    if (managingCommunities.length > 0) {
+                        const communityNames = managingCommunities.map(c => c.name).join(', ');
+                        throw new Error(`${name} is assigned to community: ${communityNames}. Please assign other Manager to the community before deleting.`);
+                    }
+
+                    // Safe to delete if not managing any community
                     await ManagerModel.findOneAndDelete({ email });
+                    await UserModel.findOneAndDelete({ _id });
+                } else if (role === 'Guest') {
+                    await UserModel.findOneAndDelete({ _id });
                 }
 
                 return user;
@@ -251,10 +254,6 @@ export const completeTempPasswordResolver = schemaComposer.createResolver({
     resolve: async ({ args }: { args: any }) => {
         const { email } = args;
         try {
-            // We can use Mongoose directly to update the user in 'users' collection
-            // Since better-auth uses 'users' collection and we don't have a direct model for it (UserTC maps to 'User' model which maps to 'users' collection? Yes)
-            // backend/src/models/User.ts: export const UserModel = mongoose.model<User>('User', UserSchema, 'users');
-            // So UserModel maps to 'users' collection.
 
             const user = await UserModel.findOne({ email });
             if (!user) throw new Error("User not found");
