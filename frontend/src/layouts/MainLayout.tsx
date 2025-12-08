@@ -57,7 +57,7 @@ export default function MainLayout() {
             </footer>
 
             {/* Chat Widget */}
-            {session && <ChatWidget />}
+            {session && (session.user as any).role !== 'Admin' && <ChatWidget />}
         </div>
     )
 }
