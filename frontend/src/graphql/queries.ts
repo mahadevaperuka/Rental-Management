@@ -32,6 +32,9 @@ export const GET_TENANTS = gql`
       email
       phone
       joined_date
+      user {
+        _id
+      }
       lease {
         _id
         start_date

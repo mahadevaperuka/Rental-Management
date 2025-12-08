@@ -180,7 +180,7 @@ export default function ManagerTenants() {
                                                     <Button
                                                         size="sm"
                                                         variant="destructive"
-                                                        onClick={() => handleDelete(tenant._id)}
+                                                        onClick={() => handleDelete(tenant.user?._id)}
                                                         disabled={deleting}
                                                     >
                                                         Delete

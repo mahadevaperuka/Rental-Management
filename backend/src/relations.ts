@@ -94,6 +94,14 @@ TenantTC.addRelation('lease', {
     projection: { lease_id: 1 },
 });
 
+TenantTC.addRelation('user', {
+    resolver: () => UserTC.getResolver('findOne'),
+    prepareArgs: {
+        filter: (source: any) => ({ linked_id: source._id }),
+    },
+    projection: { _id: 1 },
+});
+
 // Application Relations
 ApplicationTC.addRelation('unit', {
     resolver: () => UnitTC.getResolver('findById'),
