@@ -2,10 +2,10 @@ export const INTENTS = {
     // Tenant Intents
     GET_MY_LEASE: {
         name: 'GET_MY_LEASE',
-        description: 'Get details about the current lease including rent, start date, and end date.',
+        description: 'Get details about the current Active leases including rent, start date, and end date.',
         query: `
             query GetMyLease($linked_id: MongoID!) {
-                leaseMany(filter: { tenant_id: $linked_id }) {
+                leaseMany(filter: { tenant_id: $linked_id, status: Active }) {
                     _id
                     start_date
                     end_date
@@ -128,5 +128,27 @@ export const INTENTS = {
                 }
             }
         `
-    }
+    },
+    GET_TENANTS: {
+        name: 'GET_TENANTS',
+        description: 'Get list of tenants who have active leases.',
+        query: `
+            query GetTenants {
+                tenantMany {
+                        email
+                        name
+                        phone
+                        lease {
+                            apartment_id
+                            unit {
+                                apartment_no
+                                community {
+                                    name
+                                }
+                            }
+                        }
+                }
+            }
+        `
+    },
 };
