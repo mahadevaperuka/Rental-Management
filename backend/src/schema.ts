@@ -9,7 +9,7 @@ import { PaymentTC } from './models/Payment.js';
 import { MaintenanceTC } from './models/Maintenance.js';
 import { AdminTC } from './models/Admin.js';
 import { ManagerTC } from './models/Manager.js';
-import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver } from './resolvers/customUserResolvers.js';
+import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver, deleteCommunityResolver } from './resolvers/customUserResolvers.js';
 import { acceptApplicationResolver } from './resolvers/customApplicationResolvers.js';
 import { filterByManager } from './resolvers/managerResolvers.js';
 import { chatResolver } from './resolvers/chatResolvers.js';
@@ -53,7 +53,7 @@ schemaComposer.Query.addFields({
 schemaComposer.Mutation.addFields({
   communityCreateOne: CommunityTC.getResolver('createOne'),
   communityUpdateById: CommunityTC.getResolver('updateById'),
-  communityRemoveById: CommunityTC.getResolver('removeById'),
+  communityRemoveById: deleteCommunityResolver,
 });
 
 // Unit

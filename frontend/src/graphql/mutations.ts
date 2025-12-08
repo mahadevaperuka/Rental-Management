@@ -94,7 +94,7 @@ export const UPDATE_COMMUNITY = gql`
 export const DELETE_COMMUNITY = gql`
   mutation DeleteCommunity($id: MongoID!) {
     communityRemoveById(_id: $id) {
-      recordId
+      name
     }
   }
 `;

@@ -1,5 +1,6 @@
 import { schemaComposer } from 'graphql-compose';
 import { UserTC } from '../models/User.js';
+import { CommunityTC } from '../models/Community.js';
 import { auth } from '../auth.js';
 
 import { TenantModel } from '../models/Tenant.js';
@@ -18,7 +19,7 @@ export const createUserAccountResolver = schemaComposer.createResolver({
         password: 'String!',
         role: 'String!',
         image: 'String',
-        phone: 'String', // Optional, for Tenant/Manager
+        phone: 'String',
     },
     resolve: async ({ args }: { args: any }) => {
         const { name, email, role, image, phone } = args;
@@ -263,8 +264,52 @@ export const completeTempPasswordResolver = schemaComposer.createResolver({
 
             return user;
         } catch (error: any) {
-            console.error("Error completing temp password:", error);
             throw new Error(error.message || "Failed to update user");
+        }
+    }
+});
+
+export const deleteCommunityResolver = schemaComposer.createResolver({
+    name: 'deleteCommunity',
+    type: CommunityTC,
+    args: {
+        _id: 'MongoID!',
+    },
+    resolve: async ({ args }: { args: any }) => {
+        const { _id } = args;
+        try {
+            // Check for units in this community
+            const units = await UnitModel.find({ community_id: _id });
+
+            if (units.length > 0) {
+                const unitIds = units.map(u => u._id);
+
+                // Check for active leases in these units
+                const activeLeases = await LeaseModel.find({
+                    apartment_id: { $in: unitIds },
+                    status: { $in: ['Active', 'Pending'] }
+                });
+
+                if (activeLeases.length > 0) {
+                    throw new Error(`Cannot delete community. There are ${activeLeases.length} active lease(s) associated with units in this community.`);
+                }
+
+                // Check for occupied units
+                const occupiedUnits = units.filter(u => u.status === 'Occupied');
+                if (occupiedUnits.length > 0) {
+                    throw new Error(`Cannot delete community. There are ${occupiedUnits.length} occupied unit(s).`);
+                }
+
+                // Safe to delete units as they are vacant/free
+                await UnitModel.deleteMany({ community_id: _id });
+            }
+
+            const community = await CommunityModel.findByIdAndDelete(_id);
+            return community;
+
+        } catch (error: any) {
+            console.error("Error deleting community:", error);
+            throw new Error(error.message || "Failed to delete community");
         }
     }
 });

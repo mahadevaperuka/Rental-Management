@@ -132,14 +132,17 @@ export default function AdminCommunities() {
         }
     }
 
+    const [errorDialog, setErrorDialog] = useState<string | null>(null)
+
     const handleDelete = async (id: string) => {
         if (confirm("Are you sure you want to delete this community? This action cannot be undone.")) {
             try {
                 await deleteCommunity({
                     variables: { id }
                 })
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Failed to delete community:", err)
+                setErrorDialog(err.message || "Failed to delete community.")
             }
         }
     }
@@ -240,6 +243,20 @@ export default function AdminCommunities() {
                                 </Button>
                             </DialogFooter>
                         </form>
+                    </DialogContent>
+                </Dialog>
+
+                <Dialog open={!!errorDialog} onOpenChange={(open) => !open && setErrorDialog(null)}>
+                    <DialogContent className="bg-white">
+                        <DialogHeader>
+                            <DialogTitle className="text-red-600">Action Failed</DialogTitle>
+                        </DialogHeader>
+                        <div className="py-4">
+                            <p className="text-gray-700">{errorDialog}</p>
+                        </div>
+                        <DialogFooter>
+                            <Button onClick={() => setErrorDialog(null)}>Close</Button>
+                        </DialogFooter>
                     </DialogContent>
                 </Dialog>
             </div>

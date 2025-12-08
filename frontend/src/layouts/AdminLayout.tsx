@@ -6,7 +6,6 @@ const sidebarItems = [
     { icon: LayoutDashboard, label: "Overview", href: "/admin" },
     { icon: Building2, label: "Communities", href: "/admin/communities" },
     { icon: Users, label: "Users & Managers", href: "/admin/users" },
-    { icon: Settings, label: "Settings", href: "/admin/settings" },
 ]
 
 export default function AdminLayout() {
