@@ -14,6 +14,7 @@ import { acceptApplicationResolver } from './resolvers/customApplicationResolver
 import { filterByManager } from './resolvers/managerResolvers.js';
 import { chatResolver } from './resolvers/chatResolvers.js';
 import './relations.js';
+import { authGuard } from './middleware/authMiddleware.js';
 
 const schemaComposer = new SchemaComposer();
 
@@ -149,5 +150,18 @@ schemaComposer.Mutation.addFields({
   managerUpdateById: ManagerTC.getResolver('updateById'),
   chat: chatResolver,
 });
+
+// // Apply Global Auth Middleware
+// [schemaComposer.Query, schemaComposer.Mutation].forEach(tc => {
+//   tc.getFieldNames().forEach(field => {
+//     const fc = tc.getFieldConfig(field);
+//     const next = fc.resolve;
+//     if (next) {
+//       tc.extendField(field, {
+//         resolve: (source, args, context, info) => authGuard(next, source, args, context, info)
+//       });
+//     }
+//   });
+// });
 
 export const schema = schemaComposer.buildSchema();

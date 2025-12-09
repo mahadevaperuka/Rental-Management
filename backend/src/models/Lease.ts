@@ -11,6 +11,7 @@ export const LeaseZod = z.object({
     security_deposit: z.number(),
     status: z.enum(['Active', 'Terminated', 'Expired']),
     documents_urls: z.array(z.string()),
+    next_payment_date: z.date().optional(),
 });
 
 export type Lease = z.infer<typeof LeaseZod> & Document;
@@ -24,6 +25,15 @@ const LeaseSchema = new Schema<Lease>({
     security_deposit: { type: Number, required: true },
     status: { type: String, enum: ['Active', 'Terminated', 'Expired'], default: 'Active' },
     documents_urls: [{ type: String }],
+    next_payment_date: { type: Date },
+});
+
+// Initialize next_payment_date to start_date for new leases
+LeaseSchema.pre('save', function (next) {
+    if (this.isNew && !this.next_payment_date) {
+        this.next_payment_date = this.start_date;
+    }
+    next();
 });
 
 export const LeaseModel = mongoose.model<Lease>('Lease', LeaseSchema);

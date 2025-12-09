@@ -11,13 +11,21 @@ export const GET_USERS = gql`
       last_login
       tenant_profile {
         _id
-        lease {
+        phone
+        leases {
           _id
           start_date
           end_date
           monthly_rent
           security_deposit
           status
+          next_payment_date
+          unit {
+            apartment_no
+            community {
+              name
+            }
+          }
         }
       }
     }
@@ -35,22 +43,20 @@ export const GET_TENANTS = gql`
       user {
         _id
       }
-      lease {
+      leases {
         _id
         start_date
         end_date
         monthly_rent
         security_deposit
         status
+        next_payment_date
         unit {
-            _id
-            apartment_no
-            community {
-                _id
-                name
-            }
+          _id
+          apartment_no
         }
       }
+
     }
   }
 `;
@@ -179,8 +185,8 @@ export const GET_ADMIN_STATS = gql`
   query GetAdminStats {
     communityCount
     unitCount
-    tenantCount
-    userCount
+    tenantCount: userCount(filter: { role: Tenant })
+    usersCount: userCount(filter: { OR: [{ role: Tenant }, { role: Guest }] })
   }
 `;
 
@@ -211,6 +217,7 @@ export const GET_MY_LEASE = gql`
       end_date
       monthly_rent
       status
+      next_payment_date
       unit {
         _id
         apartment_no
@@ -234,6 +241,9 @@ export const GET_MY_PAYMENTS = gql`
       payment_date
       status
       payment_method
+      lease {
+        _id
+      }
     }
   }
 `;
@@ -258,6 +268,9 @@ export const GET_MY_REQUESTS = gql`
       status
       priority
       createdAt: reported_date
+      unit {
+        _id
+      }
     }
   }
 `;

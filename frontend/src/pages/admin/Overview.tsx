@@ -33,7 +33,7 @@ export default function AdminOverview() {
         },
         {
             title: "Total Users",
-            value: data?.userCount || 0,
+            value: data?.usersCount || 0,
             icon: UserCheck,
             description: "Registered system users",
             color: "text-orange-600 bg-orange-50"

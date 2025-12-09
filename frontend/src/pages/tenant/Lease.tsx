@@ -1,5 +1,6 @@
 import { useQuery } from "@apollo/client/react"
 import { authClient } from "@/lib/auth-client"
+import { formatDate } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Calendar, CreditCard, FileText, Home } from "lucide-react"
 import { GET_MY_LEASE } from "@/graphql/queries"
@@ -76,13 +77,13 @@ export default function TenantLease() {
                                                 <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" /> Start Date
                                                 </p>
-                                                <p>{new Date(activeLease.start_date).toLocaleDateString()}</p>
+                                                <p>{formatDate(activeLease.start_date)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" /> End Date
                                                 </p>
-                                                <p>{new Date(activeLease.end_date).toLocaleDateString()}</p>
+                                                <p>{formatDate(activeLease.end_date)}</p>
                                             </div>
                                         </div>
                                         <div>
@@ -96,6 +97,14 @@ export default function TenantLease() {
                                             <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-500 text-white shadow">
                                                 {activeLease.status}
                                             </span>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-500 flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" /> Next Payment Due
+                                            </p>
+                                            <p className="text-lg font-semibold text-blue-600">
+                                                {activeLease.next_payment_date ? formatDate(activeLease.next_payment_date) : 'N/A'}
+                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>

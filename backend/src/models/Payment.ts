@@ -26,6 +26,22 @@ const PaymentSchema = new Schema<Payment>({
     receipt_url: { type: String },
 });
 
+// Update Lease next_payment_date when a payment is made
+PaymentSchema.post('save', async function (doc) {
+    if (doc.status === 'Paid') {
+        const LeaseModel = mongoose.model('Lease');
+        const lease = await LeaseModel.findById(doc.lease_id);
+        if (lease) {
+            const lastDate = new Date(doc.payment_date);
+            // Calculate next due date (1st of next month)
+            const nextDue = new Date(Date.UTC(lastDate.getUTCFullYear(), lastDate.getUTCMonth() + 1, 1));
+
+            lease.next_payment_date = nextDue;
+            await lease.save();
+        }
+    }
+});
+
 export const PaymentModel = mongoose.model<Payment>('Payment', PaymentSchema);
 
 export const PaymentTC = composeWithMongoose(PaymentModel);

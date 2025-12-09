@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-import { User, ShieldCheck, ShieldAlert, Search, Plus } from "lucide-react"
+import { User, ShieldCheck, ShieldAlert, Search, Plus, Phone, Mail, Home } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -133,21 +133,51 @@ export default function AdminUsers() {
     const [editingLease, setEditingLease] = useState<any>(null)
     const [isLeaseEditOpen, setIsLeaseEditOpen] = useState(false)
 
+    const [availableLeases, setAvailableLeases] = useState<any[]>([])
+
     const handleLeaseEditClick = (user: any) => {
-        const lease = user.tenant_profile?.lease;
-        if (!lease) {
+        // Leases might be in tenant_profile.leases (array) or tenant_profile.lease (single obj legacy/fallback)
+        const profile = user.tenant_profile;
+        if (!profile) {
+            alert("This user does not have a tenant profile.")
+            return
+        }
+
+        const leases = profile.leases || [];
+
+        if (leases.length === 0) {
             alert("This user does not have an active lease to edit.")
             return
         }
+
+        setAvailableLeases(leases)
+
+        // Default to first active or just first
+        const leaseToEdit = leases.find((l: any) => l.status === 'Active') || leases[0]
+
         setEditingLease({
-            _id: lease._id,
-            start_date: lease.start_date.split('T')[0],
-            end_date: lease.end_date.split('T')[0],
-            monthly_rent: lease.monthly_rent,
-            security_deposit: lease.security_deposit,
-            status: lease.status
+            _id: leaseToEdit._id,
+            start_date: leaseToEdit.start_date.split('T')[0],
+            end_date: leaseToEdit.end_date.split('T')[0],
+            monthly_rent: leaseToEdit.monthly_rent,
+            security_deposit: leaseToEdit.security_deposit,
+            status: leaseToEdit.status
         })
         setIsLeaseEditOpen(true)
+    }
+
+    const handleLeaseSelectionChange = (leaseId: string) => {
+        const lease = availableLeases.find(l => l._id === leaseId)
+        if (lease) {
+            setEditingLease({
+                _id: lease._id,
+                start_date: lease.start_date.split('T')[0],
+                end_date: lease.end_date.split('T')[0],
+                monthly_rent: lease.monthly_rent,
+                security_deposit: lease.security_deposit,
+                status: lease.status
+            })
+        }
     }
 
     const handleUpdateLease = async (e: React.FormEvent) => {
@@ -169,6 +199,17 @@ export default function AdminUsers() {
             console.error("Failed to update lease:", err)
         }
     }
+
+    // ... (rest of code) ...
+    // Note: I will inject the selector UI in the next chunk logic or assume context helps
+
+    // ...
+
+    // Filter logic... (no changes needed)
+
+    // ...
+
+
 
     const filteredUsers = useMemo(() => {
         if (!data?.userMany) return []
@@ -210,74 +251,150 @@ export default function AdminUsers() {
         }
     }
 
-    const UserTable = ({ users }: { users: any[] }) => (
+    const UserTable = ({ users, variant = 'default' }: { users: any[], variant?: 'default' | 'tenants' }) => (
         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Joined</TableHead>
+                    {variant === 'tenants' ? (
+                        <>
+                            <TableHead>Contact</TableHead>
+                            <TableHead>Unit</TableHead>
+                            <TableHead>Lease Period</TableHead>
+                            <TableHead>Status</TableHead>
+                        </>
+                    ) : (
+                        <>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Role</TableHead>
+                            <TableHead>Joined</TableHead>
+                        </>
+                    )}
                     <TableHead>Actions</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 {users.length === 0 ? (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={variant === 'tenants' ? 6 : 5} className="text-center py-8 text-gray-500">
                             No users found matching your criteria.
                         </TableCell>
                     </TableRow>
                 ) : (
-                    users.map((user: any) => (
-                        <TableRow key={user._id}>
-                            <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                    {getRoleIcon(user.role)}
-                                    {user.name}
-                                </div>
-                            </TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                                <Badge className={getRoleBadgeColor(user.role)} variant="secondary">
-                                    {user.role}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>
-                                {new Date(user.createdAt).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell>
-                                {user.role !== 'Admin' && (
+                    users.map((user: any) => {
+                        const activeLeases = user.tenant_profile?.leases?.filter((l: any) => l.status === 'Active') || [];
+                        return (
+                            <TableRow key={user._id}>
+                                <TableCell className="font-medium align-top">
                                     <div className="flex items-center gap-2">
-                                        {user.role === 'Tenant' && user.tenant_profile?.lease && (
+                                        {variant !== 'tenants' && getRoleIcon(user.role)}
+                                        {user.name}
+                                    </div>
+                                </TableCell>
+                                {variant === 'tenants' ? (
+                                    <>
+                                        <TableCell className="align-top">
+                                            <div className="flex flex-col gap-1 text-sm text-gray-500">
+                                                <div className="flex items-center gap-2">
+                                                    <Mail className="h-3 w-3" /> {user.email}
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className="h-3 w-3" /> {user.tenant_profile?.phone}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                            {activeLeases.length > 0 ? (
+                                                <div className="flex flex-col gap-3">
+                                                    {activeLeases.map((l: any) => (
+                                                        <div key={l._id} className="flex items-center gap-2 h-6">
+                                                            <Home className="h-3 w-3 text-gray-400" />
+                                                            <span className="whitespace-nowrap">Unit {l.unit?.apartment_no}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 italic">No unit assigned</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                            {activeLeases.length > 0 ? (
+                                                <div className="flex flex-col gap-3">
+                                                    {activeLeases.map((l: any) => (
+                                                        <div key={l._id} className="text-xs text-gray-500 h-6 flex items-center whitespace-nowrap">
+                                                            {new Date(l.start_date).toLocaleDateString()} - {new Date(l.end_date).toLocaleDateString()}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="align-top">
+                                            {activeLeases.length > 0 ? (
+                                                <div className="flex flex-col gap-3">
+                                                    {activeLeases.map((l: any) => (
+                                                        <div key={l._id} className="h-6 flex items-center">
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${l.status === 'Active' ? 'bg-green-50 text-green-700' :
+                                                                l.status === 'Terminated' ? 'bg-red-50 text-red-700' :
+                                                                    'bg-gray-100 text-gray-700'
+                                                                }`}>
+                                                                {l.status}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
+                                        </TableCell>
+                                    </>
+                                ) : (
+                                    <>
+                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell>
+                                            <Badge className={getRoleBadgeColor(user.role)} variant="secondary">
+                                                {user.role}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            {new Date(user.createdAt).toLocaleDateString()}
+                                        </TableCell>
+                                    </>
+                                )}
+                                <TableCell className="align-top">
+                                    {user.role !== 'Admin' && (
+                                        <div className="flex items-center gap-2">
+                                            {user.role === 'Tenant' && (user.tenant_profile?.leases && user.tenant_profile.leases.length > 0) && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => handleLeaseEditClick(user)}
+                                                >
+                                                    Edit Lease
+                                                </Button>
+                                            )}
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => handleLeaseEditClick(user)}
+                                                onClick={() => handleEditClick(user)}
                                             >
-                                                Edit Lease
+                                                Edit User
                                             </Button>
-                                        )}
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => handleEditClick(user)}
-                                        >
-                                            Edit User
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={() => handleDelete(user._id)}
-                                            disabled={deleting}
-                                        >
-                                            Delete
-                                        </Button>
-                                    </div>
-                                )}
-                            </TableCell>
-                        </TableRow>
-                    ))
+                                            <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                onClick={() => handleDelete(user._id)}
+                                                disabled={deleting}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </div>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                        );
+                    })
                 )}
             </TableBody>
         </Table>
@@ -427,7 +544,7 @@ export default function AdminUsers() {
                             <UserTable users={filteredUsers} />
                         </TabsContent>
                         <TabsContent value="tenants" className="m-0">
-                            <UserTable users={filteredUsers} />
+                            <UserTable users={filteredUsers} variant="tenants" />
                         </TabsContent>
                         <TabsContent value="managers" className="m-0">
                             <UserTable users={filteredUsers} />
@@ -448,6 +565,26 @@ export default function AdminUsers() {
                     {editingLease && (
                         <form onSubmit={handleUpdateLease}>
                             <div className="grid gap-4 py-4">
+                                {availableLeases.length > 1 && (
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="lease-select">Select Lease to Edit</Label>
+                                        <Select
+                                            value={editingLease._id}
+                                            onValueChange={handleLeaseSelectionChange}
+                                        >
+                                            <SelectTrigger id="lease-select" className="bg-gray-50">
+                                                <SelectValue placeholder="Select a lease" />
+                                            </SelectTrigger>
+                                            <SelectContent className="bg-white">
+                                                {availableLeases.map((lease: any) => (
+                                                    <SelectItem key={lease._id} value={lease._id}>
+                                                        Unit {lease.unit?.apartment_no} ({lease.status}) - ${lease.monthly_rent}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="start-date">Start Date</Label>

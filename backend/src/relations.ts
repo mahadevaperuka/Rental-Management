@@ -3,7 +3,7 @@ import { CommunityTC } from './models/Community.js';
 import { LeaseTC } from './models/Lease.js';
 import { TenantTC } from './models/Tenant.js';
 import { MaintenanceTC } from './models/Maintenance.js';
-import { PaymentTC } from './models/Payment.js';
+import { PaymentTC, PaymentModel } from './models/Payment.js';
 import { ApplicationTC } from './models/Application.js';
 import { ManagerTC } from './models/Manager.js';
 import { UserTC } from './models/User.js';
@@ -51,6 +51,8 @@ LeaseTC.addRelation('tenant', {
     projection: { tenant_id: 1 },
 });
 
+
+
 // Maintenance Relations
 MaintenanceTC.addRelation('unit', {
     resolver: () => UnitTC.getResolver('findById'),
@@ -92,6 +94,30 @@ TenantTC.addRelation('lease', {
         _id: (source: any) => source.lease_id,
     },
     projection: { lease_id: 1 },
+});
+
+TenantTC.addRelation('leases', {
+    resolver: () => LeaseTC.getResolver('findMany'),
+    prepareArgs: {
+        filter: (source: any) => ({ tenant_id: source._id }),
+    },
+    projection: { _id: 1 },
+});
+
+TenantTC.addRelation('payments', {
+    resolver: () => PaymentTC.getResolver('findMany'),
+    prepareArgs: {
+        filter: (source: any) => ({ tenant_id: source._id }),
+    },
+    projection: { _id: 1 },
+});
+
+TenantTC.addRelation('maintenance', {
+    resolver: () => MaintenanceTC.getResolver('findMany'),
+    prepareArgs: {
+        filter: (source: any) => ({ tenant_id: source._id }),
+    },
+    projection: { _id: 1 },
 });
 
 TenantTC.addRelation('user', {

@@ -27,12 +27,15 @@ export const INTENTS = {
         description: 'Get recent payment history and status.',
         query: `
             query GetMyPayments($linked_id: MongoID!) {
-                paymentMany(filter: { tenant_id: $linked_id }, sort: DATE_DESC, limit: 5) {
+                paymentMany(filter: { tenant_id: $linked_id }, limit: 5) {
                     _id
                     amount
-                    date
+                    date : payment_date
                     status
                     payment_method
+                    lease {
+                        next_payment_date
+                    }
                 }
             }
         `
@@ -52,11 +55,11 @@ export const INTENTS = {
             }
         `
     },
-    GET_COMMUNITY_INFO: {
-        name: 'GET_COMMUNITY_INFO',
+    GET_MY_COMMUNITY_INFO: {
+        name: 'GET_MY_COMMUNITY_INFO',
         description: 'Get manager contact info and community details.',
         query: `
-            query GetCommunityInfo($linked_id: MongoID!) {
+            query GetMyCommunityInfo($linked_id: MongoID!) {
                 tenantMany(filter: { _id: $linked_id }) {
                     lease {
                         unit {
