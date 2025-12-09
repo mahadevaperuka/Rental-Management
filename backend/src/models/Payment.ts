@@ -36,6 +36,7 @@ PaymentSchema.post('save', async function (doc) {
             // Calculate next due date (1st of next month)
             const nextDue = new Date(Date.UTC(lastDate.getUTCFullYear(), lastDate.getUTCMonth() + 1, 1));
 
+            console.log(`[Payment] Updating lease ${lease._id} next_payment_date from ${lease.next_payment_date} to ${nextDue}`);
             lease.next_payment_date = nextDue;
             await lease.save();
         }

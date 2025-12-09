@@ -31,6 +31,7 @@ const LeaseSchema = new Schema<Lease>({
 // Initialize next_payment_date to start_date for new leases
 LeaseSchema.pre('save', function (next) {
     if (this.isNew && !this.next_payment_date) {
+        console.log(`[Lease] Initializing next_payment_date for new lease ${this._id} to ${this.start_date}`);
         this.next_payment_date = this.start_date;
     }
     next();

@@ -33,7 +33,7 @@ export default function TenantPayments() {
     })
 
     // Fetch leases for rent amount
-    const { data: leaseData, loading: leaseLoading } = useQuery<any>(GET_MY_LEASE, {
+    const { data: leaseData, loading: leaseLoading, refetch: refetchLease } = useQuery<any>(GET_MY_LEASE, {
         variables: {
             filter: {
                 tenant_id: (session?.user as any)?.linked_id,
@@ -51,6 +51,7 @@ export default function TenantPayments() {
             setReceiptUrl("")
             setPaymentDate(new Date().toISOString().split('T')[0])
             refetchPayments()
+            refetchLease() // Refetch lease to get updated next_payment_date
             alert("Payment submitted successfully!")
         },
         onError: (err) => {
@@ -112,9 +113,8 @@ export default function TenantPayments() {
             .sort((a: any, b: any) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
 
         const nextPaymentAmount = lease.monthly_rent
-        const nextPaymentDate = new Date()
-        nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1)
-        nextPaymentDate.setDate(1)
+        // Use persisted next_payment_date from lease
+        const nextPaymentDate = lease.next_payment_date ? new Date(lease.next_payment_date) : new Date();
 
         // Get last payment
         const lastPayment = leasePayments.length > 0 ? leasePayments[0] : null
@@ -127,14 +127,14 @@ export default function TenantPayments() {
             const today = new Date()
             const currentMonth = today.getMonth()
             const currentYear = today.getFullYear()
-            
+
             // Payment date is stored as UTC midnight. Use UTC getters to get the "intended" date.
             const paymentMonth = lastPaymentDate.getUTCMonth()
             const paymentYear = lastPaymentDate.getUTCFullYear()
 
             // If payment matches current month/year OR is for a future month/year
-            const isPaidForCurrentOrFuture = (paymentYear > currentYear) || 
-                                             (paymentYear === currentYear && paymentMonth >= currentMonth)
+            const isPaidForCurrentOrFuture = (paymentYear > currentYear) ||
+                (paymentYear === currentYear && paymentMonth >= currentMonth)
 
             if (isPaidForCurrentOrFuture) {
                 return { status: "Current", color: "text-green-600", message: "Paid for this month" }
@@ -173,7 +173,6 @@ export default function TenantPayments() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">${nextPaymentAmount.toFixed(2)}</div>
-                            <p className="text-xs text-gray-500 mt-1">Due {nextPaymentDate.toLocaleDateString()}</p>
                             <p className="text-xs text-gray-500 mt-1">Due {formatDate(nextPaymentDate)}</p>
                         </CardContent>
                     </Card>
@@ -225,7 +224,7 @@ export default function TenantPayments() {
                                     ) : (
                                         leasePayments.map((payment: any) => (
                                             <tr key={payment._id} className="hover:bg-gray-50/50">
-                                                <td className="px-4 py-3">{new Date(payment.payment_date).toLocaleDateString()}</td>
+                                                <td className="px-4 py-3">{formatDate(payment.payment_date)}</td>
                                                 <td className="px-4 py-3 font-medium">${payment.amount.toFixed(2)}</td>
                                                 <td className="px-4 py-3">
                                                     <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${payment.status === 'Paid' ? 'bg-green-50 text-green-700 ring-green-600/20' :
@@ -266,10 +265,9 @@ export default function TenantPayments() {
                                 id="amount"
                                 type="number"
                                 value={amount}
-                                onChange={(e) => setAmount(e.target.value)}
+                                readOnly
+                                className="bg-gray-100 text-gray-500 cursor-not-allowed"
                                 required
-                                min="1"
-                                step="1"
                             />
                         </div>
                         <div className="space-y-2">
