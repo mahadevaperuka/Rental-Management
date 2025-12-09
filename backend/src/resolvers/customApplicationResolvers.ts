@@ -39,6 +39,34 @@ export const acceptApplicationResolver = schemaComposer.createResolver({
                 phone: application.phone,
                 joined_date: new Date(),
             });
+        } else {
+            // Check for existing active lease in the SAME community with overlapping dates
+            const newUnit = await UnitModel.findById(application.apartment_id);
+            if (!newUnit) throw new Error("Unit not found");
+            const newCommunityId = newUnit.community_id;
+
+            // Find all active leases for this tenant
+            const activeLeases = await LeaseModel.find({
+                tenant_id: tenant._id,
+                status: 'Active'
+            });
+
+            for (const lease of activeLeases) {
+                // Get unit for existing lease to check community
+                const leaseUnit = await UnitModel.findById(lease.apartment_id);
+                if (leaseUnit && leaseUnit.community_id?.toString() === newCommunityId?.toString()) {
+                    // Check for Date Overlap
+                    // Overlap logic: (StartA <= EndB) and (EndA >= StartB)
+                    const newStart = new Date(start_date as string).getTime();
+                    const newEnd = new Date(end_date as string).getTime();
+                    const existingStart = new Date(lease.start_date).getTime();
+                    const existingEnd = new Date(lease.end_date).getTime();
+
+                    if (newStart <= existingEnd && newEnd >= existingStart) {
+                        throw new Error(`Tenant already has an active lease in this community for these dates (Unit ${leaseUnit.apartment_no}).`);
+                    }
+                }
+            }
         }
 
         // 3. Create Lease
