@@ -221,7 +221,7 @@ export default function AdminUsers() {
 
             const matchesTab =
                 activeTab === "guests" ? user.role === "Guest" :
-                    activeTab === "tenants" ? user.role === "Tenant" :
+                    activeTab === "tenants" ? (user.role === "Tenant" && user.tenant_profile?.leases?.some((l: any) => l.status === 'Active')) :
                         activeTab === "managers" ? user.role === "Manager" :
                             activeTab === "admins" ? user.role === "Admin" :
                                 true

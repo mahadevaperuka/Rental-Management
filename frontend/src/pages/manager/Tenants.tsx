@@ -114,7 +114,9 @@ export default function ManagerTenants() {
     if (loading) return <div className="flex justify-center p-8">Loading tenants...</div>
     if (error) return <div className="text-red-500 p-8">Error loading tenants: {error.message}</div>
 
-    const tenants = data?.tenantMany || []
+    const tenants = (data?.tenantMany || []).filter((tenant: any) =>
+        tenant.leases?.some((lease: any) => lease.status === 'Active')
+    );
 
     return (
         <div className="space-y-6">
