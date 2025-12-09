@@ -32,9 +32,13 @@ PaymentSchema.post('save', async function (doc) {
         const LeaseModel = mongoose.model('Lease');
         const lease = await LeaseModel.findById(doc.lease_id);
         if (lease) {
-            const lastDate = new Date(doc.payment_date);
-            // Calculate next due date (1st of next month)
-            const nextDue = new Date(Date.UTC(lastDate.getUTCFullYear(), lastDate.getUTCMonth() + 1, 1));
+            // Calculate next due date: Add 1 month to the EXISTING next_payment_date
+            // If next_payment_date is missing (shouldn't be), fallback to payment_date + 1 month
+            const baseDate = lease.next_payment_date ? new Date(lease.next_payment_date) : new Date(doc.payment_date);
+
+            // Create new date object to avoid mutating if it's a ref
+            const nextDue = new Date(baseDate);
+            nextDue.setMonth(nextDue.getMonth() + 1);
 
             console.log(`[Payment] Updating lease ${lease._id} next_payment_date from ${lease.next_payment_date} to ${nextDue}`);
             lease.next_payment_date = nextDue;

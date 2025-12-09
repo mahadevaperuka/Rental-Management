@@ -642,7 +642,6 @@ export default function AdminUsers() {
                                         <SelectContent className="bg-white">
                                             <SelectItem value="Active">Active</SelectItem>
                                             <SelectItem value="Terminated">Terminated</SelectItem>
-                                            <SelectItem value="Expired">Expired</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>

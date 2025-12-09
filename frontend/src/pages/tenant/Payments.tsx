@@ -112,9 +112,17 @@ export default function TenantPayments() {
         const leasePayments = payments.filter((p: any) => p.lease?._id === lease._id)
             .sort((a: any, b: any) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
 
-        const nextPaymentAmount = lease.monthly_rent
-        // Use persisted next_payment_date from lease
         const nextPaymentDate = lease.next_payment_date ? new Date(lease.next_payment_date) : new Date();
+
+        // Calculate days until due
+        const now = new Date();
+        const diffTime = nextPaymentDate.getTime() - now.getTime();
+        const daysUntilDue = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // Only allow payment if within 5 days of due date (or overdue)
+        const isPayable = daysUntilDue <= 5;
+
+        const nextPaymentAmount = isPayable ? lease.monthly_rent : 0;
 
         // Get last payment
         const lastPayment = leasePayments.length > 0 ? leasePayments[0] : null
@@ -123,27 +131,15 @@ export default function TenantPayments() {
         const calculateStatus = () => {
             if (!leasePayments.length) return { status: "Overdue", color: "text-red-600", message: "No payments made" }
 
-            const lastPaymentDate = new Date(lastPayment.payment_date)
-            const today = new Date()
-            const currentMonth = today.getMonth()
-            const currentYear = today.getFullYear()
+            // If not payable yet, it's just "Upcoming" or "Current"
+            if (!isPayable) {
+                return { status: "Current", color: "text-green-600", message: `Next due: ${formatDate(nextPaymentDate)}` }
+            }
 
-            // Payment date is stored as UTC midnight. Use UTC getters to get the "intended" date.
-            const paymentMonth = lastPaymentDate.getUTCMonth()
-            const paymentYear = lastPaymentDate.getUTCFullYear()
-
-            // If payment matches current month/year OR is for a future month/year
-            const isPaidForCurrentOrFuture = (paymentYear > currentYear) ||
-                (paymentYear === currentYear && paymentMonth >= currentMonth)
-
-            if (isPaidForCurrentOrFuture) {
-                return { status: "Current", color: "text-green-600", message: "Paid for this month" }
+            if (daysUntilDue < 0) {
+                return { status: "Overdue", color: "text-red-600", message: "Payment overdue" }
             } else {
-                if (today.getDate() > 5) {
-                    return { status: "Overdue", color: "text-red-600", message: "Payment overdue" }
-                } else {
-                    return { status: "Due", color: "text-yellow-600", message: "Payment due soon" }
-                }
+                return { status: "Due", color: "text-yellow-600", message: "Payment due soon" }
             }
         }
 
@@ -156,13 +152,17 @@ export default function TenantPayments() {
                         <Home className="h-5 w-5 text-gray-500" />
                         Unit {lease.unit?.apartment_no} - {lease.unit?.community?.name}
                     </h2>
-                    <Button className="gap-2" onClick={() => {
-                        setSelectedLeaseId(lease._id)
-                        setAmount(lease.monthly_rent.toString())
-                        setIsPaymentOpen(true)
-                    }}>
+                    <Button
+                        className="gap-2"
+                        disabled={!isPayable}
+                        onClick={() => {
+                            setSelectedLeaseId(lease._id)
+                            setAmount(lease.monthly_rent.toString())
+                            setIsPaymentOpen(true)
+                        }}
+                    >
                         <CreditCard className="h-4 w-4" />
-                        Make Payment
+                        {isPayable ? "Make Payment" : "No Payment Due"}
                     </Button>
                 </div>
 
