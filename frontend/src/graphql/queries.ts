@@ -54,6 +54,10 @@ export const GET_TENANTS = gql`
         unit {
           _id
           apartment_no
+          community {
+            _id
+            name
+          }
         }
       }
 

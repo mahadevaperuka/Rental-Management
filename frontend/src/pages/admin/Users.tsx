@@ -143,7 +143,8 @@ export default function AdminUsers() {
             return
         }
 
-        const leases = profile.leases || [];
+        // Filter to only show Active leases for editing
+        const leases = (profile.leases || []).filter((l: any) => l.status === 'Active');
 
         if (leases.length === 0) {
             alert("This user does not have an active lease to edit.")
@@ -309,7 +310,7 @@ export default function AdminUsers() {
                                                     {activeLeases.map((l: any) => (
                                                         <div key={l._id} className="flex items-center gap-2 h-6">
                                                             <Home className="h-3 w-3 text-gray-400" />
-                                                            <span className="whitespace-nowrap">Unit {l.unit?.apartment_no}</span>
+                                                            <span className="whitespace-nowrap">Unit {l.unit?.apartment_no} - {l.unit?.community?.name}</span>
                                                         </div>
                                                     ))}
                                                 </div>

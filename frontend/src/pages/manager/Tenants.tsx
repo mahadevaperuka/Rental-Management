@@ -13,16 +13,27 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Users, Phone, Mail, Home } from "lucide-react"
-import { GET_TENANTS } from "@/graphql/queries"
+import { authClient } from "@/lib/auth-client"
+import { GET_TENANTS, GET_MANAGER_BY_EMAIL } from "@/graphql/queries"
 import { DELETE_TENANT, UPDATE_LEASE } from "@/graphql/mutations"
 
 export default function ManagerTenants() {
+    const { data: session } = authClient.useSession()
+
+    // Main Tenants Query
     const { data, loading, error, refetch } = useQuery<any>(GET_TENANTS)
 
+    // Manager Context Query (to get Community ID)
+    const { data: managerData, loading: managerLoading } = useQuery<any>(GET_MANAGER_BY_EMAIL, {
+        variables: { email: session?.user?.email },
+        skip: !session?.user?.email
+    })
+
+    const currentCommunityId = managerData?.managerOne?.community?._id
+
+    // Mutations
     const [deleteTenant, { loading: deleting }] = useMutation(DELETE_TENANT, {
-        onCompleted: () => {
-            refetch()
-        }
+        onCompleted: () => refetch()
     })
 
     const [updateLease, { loading: updating }] = useMutation(UPDATE_LEASE, {
@@ -34,13 +45,15 @@ export default function ManagerTenants() {
     })
 
     const [errorDialog, setErrorDialog] = useState<string | null>(null)
+    const [editingLease, setEditingLease] = useState<any>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [availableLeases, setAvailableLeases] = useState<any[]>([])
 
+    // Handlers
     const handleDelete = async (tenantId: string) => {
         if (confirm("Are you sure you want to delete this tenant? This action cannot be undone.")) {
             try {
-                await deleteTenant({
-                    variables: { _id: tenantId }
-                })
+                await deleteTenant({ variables: { _id: tenantId } })
             } catch (err: any) {
                 console.error("Failed to delete tenant:", err)
                 setErrorDialog(err.message || "Failed to delete tenant. Please try again.")
@@ -48,23 +61,20 @@ export default function ManagerTenants() {
         }
     }
 
-    const [editingLease, setEditingLease] = useState<any>(null)
-    const [isEditOpen, setIsEditOpen] = useState(false)
-
-    const [availableLeases, setAvailableLeases] = useState<any[]>([])
-
     const handleEditClick = (tenant: any) => {
-        const leases = tenant.leases || [];
+        // Filter to only show Active leases within the current community for editing
+        const leases = (tenant.leases || []).filter((l: any) =>
+            l.status === 'Active' &&
+            String(l.unit?.community?._id) === String(currentCommunityId)
+        );
 
         if (leases.length === 0) {
-            alert("This tenant does not have an active lease to edit.")
+            alert("This tenant does not have an active lease in your community to edit.")
             return
         }
 
         setAvailableLeases(leases)
-
-        // Default to the first active lease, or just the first one
-        const leaseToEdit = leases.find((l: any) => l.status === 'Active') || leases[0]
+        const leaseToEdit = leases[0] // Default to first
 
         setEditingLease({
             _id: leaseToEdit._id,
@@ -111,11 +121,18 @@ export default function ManagerTenants() {
         }
     }
 
-    if (loading) return <div className="flex justify-center p-8">Loading tenants...</div>
+    if (loading || managerLoading) return <div className="flex justify-center p-8">Loading tenants...</div>
     if (error) return <div className="text-red-500 p-8">Error loading tenants: {error.message}</div>
 
+    // Helper to safely compare ObjectIDs
+    const isSameCommunity = (id1: any, id2: any) => String(id1) === String(id2);
+
     const tenants = (data?.tenantMany || []).filter((tenant: any) =>
-        tenant.leases?.some((lease: any) => lease.status === 'Active')
+        // Filter tenants to ONLY show those with active leases IN THIS COMMUNITY
+        tenant.leases?.some((lease: any) =>
+            lease.status === 'Active' &&
+            isSameCommunity(lease.unit?.community?._id, currentCommunityId)
+        )
     );
 
     return (
@@ -152,7 +169,11 @@ export default function ManagerTenants() {
                                     </tr>
                                 ) : (
                                     tenants.map((tenant: any) => {
-                                        const activeLeases = tenant.leases?.filter((l: any) => l.status === 'Active') || [];
+                                        // Filter active leases to ONLY show those IN THIS COMMUNITY
+                                        const activeLeases = tenant.leases?.filter((l: any) =>
+                                            l.status === 'Active' &&
+                                            isSameCommunity(l.unit?.community?._id, currentCommunityId)
+                                        ) || [];
                                         return (
                                             <tr key={tenant._id} className="hover:bg-gray-50/50">
                                                 <td className="px-4 py-3 font-medium align-top">{tenant.name}</td>

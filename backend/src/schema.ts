@@ -141,6 +141,7 @@ schemaComposer.Mutation.addFields({
 // Manager
 schemaComposer.Query.addFields({
   managerById: ManagerTC.getResolver('findById'),
+  managerOne: ManagerTC.getResolver('findOne'),
   managerMany: ManagerTC.getResolver('findMany'),
 });
 
