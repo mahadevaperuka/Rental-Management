@@ -2,6 +2,7 @@ import { Resolver, ObjectTypeComposer } from 'graphql-compose';
 import { ManagerModel } from '../models/Manager.js';
 import { CommunityModel } from '../models/Community.js';
 import { UnitModel } from '../models/Unit.js';
+import { LeaseModel } from '../models/Lease.js';
 
 type ResolverMiddleware = (
     resolve: (source: any, args: any, context: any, info: any) => any,
@@ -38,17 +39,21 @@ export const filterByManager: ResolverMiddleware = async (resolve, source, args,
                 args.filter = {};
             }
 
-            // Determine which field to filter on based on the return type or info
-            // We can check info.returnType or just infer from usage
-            // Since this middleware is applied to specific resolvers, we can check the field name or just try both
-
             // For Application and Maintenance
             if (info.fieldName === 'applicationMany' || info.fieldName === 'maintenanceMany') {
                 args.filter.apartment_id = { $in: unitIds };
             }
-            // For Tenant
+            // For Tenant - Find tenants who have a lease in one of these units
             else if (info.fieldName === 'tenantMany') {
-                args.filter.current_apartment_id = { $in: unitIds };
+                // Find all leases for these units
+                const leases = await LeaseModel.find({
+                    apartment_id: { $in: unitIds },
+                    status: { $in: ['Active', 'Terminated', 'Expired'] }
+                });
+                const tenantIds = leases.map(l => l.tenant_id);
+
+                // Filter tenants by ID
+                args.filter._id = { $in: tenantIds };
             }
 
         } catch (error) {
