@@ -21,8 +21,9 @@ export const swapCommunityManagersResolver = schemaComposer.createResolver({
             }
 
             // Capture current managers
-            const manager1 = com1.manager; // { manager_id, name, email ... } usually
-            const manager2 = com2.manager;
+            // Capture current managers as plain objects to avoid reference issues
+            const manager1 = com1.toObject().manager;
+            const manager2 = com2.toObject().manager;
 
             // Perform Swap
             // We need to be careful about the structure. 

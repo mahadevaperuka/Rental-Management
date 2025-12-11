@@ -313,11 +313,7 @@ export const deleteCommunityResolver = schemaComposer.createResolver({
                     throw new Error(`Cannot delete community. There are ${activeLeases.length} active lease(s) associated with units in this community.`);
                 }
 
-                // Check for occupied units
-                const occupiedUnits = units.filter(u => u.status === 'Occupied');
-                if (occupiedUnits.length > 0) {
-                    throw new Error(`Cannot delete community. There are ${occupiedUnits.length} occupied unit(s).`);
-                }
+
 
                 // Safe to delete units as they are vacant/free
                 await UnitModel.deleteMany({ community_id: _id });
