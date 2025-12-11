@@ -61,7 +61,8 @@ export const createUserAccountResolver = schemaComposer.createResolver({
 
             // 2. Create associated profile based on role
             let profileId;
-            if (role === 'Tenant') {
+            // Create Tenant profile for both Tenant and Guest roles (Guest needs profile for future applications)
+            if (role === 'Tenant' || role === 'Guest') {
                 const tenant = await TenantModel.create({
                     name,
                     email,

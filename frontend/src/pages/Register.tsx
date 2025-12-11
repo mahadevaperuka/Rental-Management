@@ -65,7 +65,7 @@ export default function Register() {
                     name,
                     email,
                     password,
-                    role: "Tenant",
+                    role: "Guest", // Still Guest, but now with data
                     phone,
                     dob: dob ? new Date(dob) : null,
                     ssn,
