@@ -211,6 +211,29 @@ export default function ManagerApplications() {
                     <DialogHeader>
                         <DialogTitle>Approve Application & Create Lease</DialogTitle>
                     </DialogHeader>
+                    {selectedApp && (
+                        <div className="bg-gray-50 p-4 rounded-lg space-y-3 border border-gray-100">
+                            <h4 className="font-medium text-sm text-gray-500 uppercase tracking-wider">Applicant Details</h4>
+                            <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-sm">
+                                <div>
+                                    <span className="text-gray-500 block text-xs">Full Name</span>
+                                    <span className="font-medium text-gray-900">{selectedApp.applicant_name}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 block text-xs">Email Address</span>
+                                    <span className="font-medium text-gray-900">{selectedApp.email}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 block text-xs">Phone Number</span>
+                                    <span className="font-medium text-gray-900">{selectedApp.phone}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 block text-xs">Date Applied</span>
+                                    <span className="font-medium text-gray-900">{formatDate(selectedApp.date_applied)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <form onSubmit={handleConfirmAccept} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
