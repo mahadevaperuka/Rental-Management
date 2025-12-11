@@ -8,6 +8,8 @@ export const ApplicationZod = z.object({
     email: z.string().email(),
     phone: z.string(),
     date_applied: z.date().default(() => new Date()),
+    move_in_date: z.date().optional(),
+    move_out_date: z.date().optional(),
     status: z.enum(['Pending', 'Approved', 'Rejected']),
     documents: z.array(z.string()),
 });
@@ -20,6 +22,8 @@ const ApplicationSchema = new Schema<Application>({
     email: { type: String, required: true },
     phone: { type: String, required: true },
     date_applied: { type: Date, default: Date.now },
+    move_in_date: { type: Date },
+    move_out_date: { type: Date },
     status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
     documents: [{ type: String }],
 });

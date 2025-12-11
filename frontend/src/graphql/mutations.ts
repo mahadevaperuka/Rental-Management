@@ -259,3 +259,11 @@ export const CREATE_PAYMENT = gql`
     }
   }
 `;
+export const SWAP_COMMUNITY_MANAGERS = gql`
+  mutation SwapCommunityManagers($community1Id: ID!, $community2Id: ID!) {
+    swapCommunityManagers(community1Id: $community1Id, community2Id: $community2Id) {
+      success
+      message
+    }
+  }
+`;

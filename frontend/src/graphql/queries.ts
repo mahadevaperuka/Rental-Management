@@ -144,6 +144,8 @@ export const GET_APPLICATIONS = gql`
       email
       phone
       date_applied
+      move_in_date
+      move_out_date
       status
       documents
         unit {
@@ -205,12 +207,30 @@ export const GET_UNITS = gql`
         status
         images
       community {
-            _id
             name
             location
         }
     }
 }
+`;
+
+export const GET_AVAILABLE_UNITS = gql`
+  query GetAvailableUnits($startDate: Date!, $endDate: Date!, $communityId: ID) {
+    getAvailableUnits(startDate: $startDate, endDate: $endDate, communityId: $communityId) {
+      _id
+      apartment_no
+      floor
+      bedrooms
+      bathrooms
+      rent
+      status
+      images
+      community {
+        name
+        location
+      }
+    }
+  }
 `;
 
 export const GET_MY_LEASE = gql`

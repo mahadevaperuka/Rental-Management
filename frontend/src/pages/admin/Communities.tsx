@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Building2, Plus, Trash2, MapPin, User, Pencil } from "lucide-react"
+import { Building2, Plus, Trash2, MapPin, User, Pencil, ArrowRightLeft, Users } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -22,7 +22,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { GET_COMMUNITIES_AND_MANAGERS } from "@/graphql/queries"
-import { CREATE_COMMUNITY, DELETE_COMMUNITY, UPDATE_COMMUNITY } from "@/graphql/mutations"
+import { CREATE_COMMUNITY, DELETE_COMMUNITY, UPDATE_COMMUNITY, SWAP_COMMUNITY_MANAGERS } from "@/graphql/mutations"
 
 export default function AdminCommunities() {
     const { data, loading, error, refetch } = useQuery<any>(GET_COMMUNITIES_AND_MANAGERS)
@@ -44,6 +44,42 @@ export default function AdminCommunities() {
         onCompleted: () => refetch()
     })
 
+    // Swap Logic
+    const [swapCommunityManagers, { loading: swapping }] = useMutation(SWAP_COMMUNITY_MANAGERS, {
+        onCompleted: (data: any) => {
+            if (data.swapCommunityManagers.success) {
+                setSwapOpen(false)
+                setSwapCommunity1Id("")
+                setSwapCommunity2Id("")
+                refetch()
+            } else {
+                setErrorDialog(data.swapCommunityManagers.message)
+            }
+        },
+        onError: (err) => {
+            setErrorDialog(err.message || "Failed to swap managers")
+        }
+    })
+
+    const [swapOpen, setSwapOpen] = useState(false)
+    const [swapCommunity1Id, setSwapCommunity1Id] = useState("")
+    const [swapCommunity2Id, setSwapCommunity2Id] = useState("")
+
+    const handleSwap = async () => {
+        if (!swapCommunity1Id || !swapCommunity2Id) return
+        if (swapCommunity1Id === swapCommunity2Id) {
+            setErrorDialog("Please select two different communities")
+            return
+        }
+        await swapCommunityManagers({
+            variables: {
+                community1Id: swapCommunity1Id,
+                community2Id: swapCommunity2Id
+            }
+        })
+    }
+
+    // Restored Existing Logic
     const [isOpen, setIsOpen] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -153,98 +189,176 @@ export default function AdminCommunities() {
     const communities = data?.communityMany || []
     const managers = data?.managerMany || []
 
+    const getManagerNameForCommunity = (communityId: string) => {
+        const community = communities.find((c: any) => c._id === communityId)
+        return community?.manager?.name || "Unassigned"
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold tracking-tight">Communities</h1>
-                <Dialog open={isOpen} onOpenChange={(open) => {
-                    setIsOpen(open)
-                    if (!open) resetForm()
-                }}>
-                    <DialogTrigger asChild>
-                        <Button className="gap-2" onClick={handleOpenCreate}>
-                            <Plus className="h-4 w-4" />
-                            Add Community
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="bg-white">
-                        <DialogHeader>
-                            <DialogTitle>{isEditing ? "Edit Community" : "Add New Community"}</DialogTitle>
-                            <DialogDescription>
-                                {isEditing ? "Update community details and manager." : "Create a new community and assign a manager."}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid gap-4 py-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="name">Community Name</Label>
-                                    <Input
-                                        id="name"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="e.g. Downtown Lofts"
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="location">Location</Label>
-                                    <Input
-                                        id="location"
-                                        value={location}
-                                        onChange={(e) => setLocation(e.target.value)}
-                                        placeholder="e.g. 123 Main St, City"
-                                        required
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="description">Description</Label>
-                                    <Input
-                                        id="description"
-                                        value={description}
-                                        onChange={(e) => setDescription(e.target.value)}
-                                        placeholder="Brief description of the community"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="image">Image URL</Label>
-                                    <Input
-                                        id="image"
-                                        value={imageUrl}
-                                        onChange={(e) => setImageUrl(e.target.value)}
-                                        placeholder="https://example.com/image.jpg"
-                                    />
-                                </div>
-                                <div className="grid gap-2">
-                                    <Label htmlFor="manager">Manager</Label>
-                                    <Select value={selectedManagerId} onValueChange={setSelectedManagerId} required>
+                <div className="flex gap-2">
+                    <Dialog open={swapOpen} onOpenChange={setSwapOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="gap-2">
+                                <Users className="h-4 w-4" />
+                                Swap Managers
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-white">
+                            <DialogHeader>
+                                <DialogTitle>Swap Community Managers</DialogTitle>
+                                <DialogDescription>
+                                    Select two communities to swap their assigned managers.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Community 1</Label>
+                                    <Select value={swapCommunity1Id} onValueChange={setSwapCommunity1Id}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select a manager" />
+                                            <SelectValue placeholder="Select community" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {managers.map((manager: any) => {
-                                                const isAssigned = manager.community && manager.community._id;
-                                                const isCurrentManager = selectedManagerId === manager._id;
-
-                                                if (isAssigned && !isCurrentManager) return null;
-
-                                                return (
-                                                    <SelectItem key={manager._id} value={manager._id}>
-                                                        {manager.name} ({manager.email})
-                                                    </SelectItem>
-                                                )
-                                            })}
+                                            {communities.map((c: any) => (
+                                                <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
+                                    {swapCommunity1Id && (
+                                        <p className="text-sm text-gray-500">
+                                            Current Manager: <span className="font-medium text-black">{getManagerNameForCommunity(swapCommunity1Id)}</span>
+                                        </p>
+                                    )}
+                                </div>
+                                <div className="flex justify-center">
+                                    <ArrowRightLeft className="h-6 w-6 text-gray-400 rotate-90 md:rotate-0" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Community 2</Label>
+                                    <Select value={swapCommunity2Id} onValueChange={setSwapCommunity2Id}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select community" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {communities.map((c: any) => (
+                                                <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {swapCommunity2Id && (
+                                        <p className="text-sm text-gray-500">
+                                            Current Manager: <span className="font-medium text-black">{getManagerNameForCommunity(swapCommunity2Id)}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button type="submit" disabled={creating || updating}>
-                                    {creating || updating ? "Saving..." : (isEditing ? "Update Community" : "Create Community")}
+                                <Button onClick={handleSwap} disabled={swapping || !swapCommunity1Id || !swapCommunity2Id}>
+                                    {swapping ? "Swapping..." : "Swap Managers"}
                                 </Button>
                             </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isOpen} onOpenChange={(open) => {
+                        setIsOpen(open)
+                        if (!open) resetForm()
+                    }}>
+                        <DialogTrigger asChild>
+                            <Button className="gap-2" onClick={handleOpenCreate}>
+                                <Plus className="h-4 w-4" />
+                                Add Community
+                            </Button>
+                        </DialogTrigger>
+                        {/* existing create dialog content */}
+                        <DialogContent className="bg-white">
+                            <DialogHeader>
+                                <DialogTitle>{isEditing ? "Edit Community" : "Add New Community"}</DialogTitle>
+                                <DialogDescription>
+                                    {isEditing ? "Update community details and manager." : "Create a new community and assign a manager."}
+                                </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmit}>
+                                {/* ... existing form fields ... reuse existing code logic or keep it ... 
+                                Wait, I cannot use replace_file_content to intelligently "merge" unless I target the right block. 
+                                I am replacing the whole return block and part of the function body. 
+                                I must be careful not to delete the existing DialogContent for Create/Edit.
+                            */}
+                                {/* ... Rewriting existing form for Create/Edit to ensure it's preserved ... */}
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="name">Community Name</Label>
+                                        <Input
+                                            id="name"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="e.g. Downtown Lofts"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="location">Location</Label>
+                                        <Input
+                                            id="location"
+                                            value={location}
+                                            onChange={(e) => setLocation(e.target.value)}
+                                            placeholder="e.g. 123 Main St, City"
+                                            required
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="description">Description</Label>
+                                        <Input
+                                            id="description"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                            placeholder="Brief description of the community"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="image">Image URL</Label>
+                                        <Input
+                                            id="image"
+                                            value={imageUrl}
+                                            onChange={(e) => setImageUrl(e.target.value)}
+                                            placeholder="https://example.com/image.jpg"
+                                        />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="manager">Manager</Label>
+                                        <Select value={selectedManagerId} onValueChange={setSelectedManagerId} required>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a manager" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {managers.map((manager: any) => {
+                                                    const isAssigned = manager.community && manager.community._id;
+                                                    const isCurrentManager = selectedManagerId === manager._id;
+
+                                                    if (isAssigned && !isCurrentManager) return null;
+
+                                                    return (
+                                                        <SelectItem key={manager._id} value={manager._id}>
+                                                            {manager.name} ({manager.email})
+                                                        </SelectItem>
+                                                    )
+                                                })}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit" disabled={creating || updating}>
+                                        {creating || updating ? "Saving..." : (isEditing ? "Update Community" : "Create Community")}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+
 
                 <Dialog open={!!errorDialog} onOpenChange={(open) => !open && setErrorDialog(null)}>
                     <DialogContent className="bg-white">

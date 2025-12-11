@@ -20,9 +20,18 @@ export const createUserAccountResolver = schemaComposer.createResolver({
         role: 'String!',
         image: 'String',
         phone: 'String',
+        // Tenant specific args
+        dob: 'Date',
+        ssn: 'String',
+        income: 'Float',
+        jobTitle: 'String',
+        jobType: 'String',
+        city: 'String',
+        state: 'String',
+        zip: 'String',
     },
     resolve: async ({ args }: { args: any }) => {
-        const { name, email, role, image, phone } = args;
+        const { name, email, role, image, phone, dob, ssn, income, jobTitle, jobType, city, state, zip } = args;
         let { password } = args;
         let is_temp_password = false;
 
@@ -57,6 +66,16 @@ export const createUserAccountResolver = schemaComposer.createResolver({
                     name,
                     email,
                     phone: phone || "", // Phone is required for Tenant
+                    dob,
+                    ssn,
+                    income,
+                    jobTitle,
+                    jobType,
+                    presentAddress: {
+                        city: city || "",
+                        state: state || "",
+                        zip: zip || ""
+                    },
                     joined_date: new Date()
                 });
                 profileId = tenant._id;

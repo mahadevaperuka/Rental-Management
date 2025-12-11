@@ -11,6 +11,8 @@ import { AdminTC } from './models/Admin.js';
 import { ManagerTC } from './models/Manager.js';
 import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver, deleteCommunityResolver } from './resolvers/customUserResolvers.js';
 import { acceptApplicationResolver } from './resolvers/customApplicationResolvers.js';
+import { swapCommunityManagersResolver } from './resolvers/communityResolvers.js';
+import { getAvailableUnitsResolver } from './resolvers/customUnitResolvers.js';
 import { filterByManager } from './resolvers/managerResolvers.js';
 import { chatResolver } from './resolvers/chatResolvers.js';
 import './relations.js';
@@ -55,6 +57,7 @@ schemaComposer.Mutation.addFields({
   communityCreateOne: CommunityTC.getResolver('createOne'),
   communityUpdateById: CommunityTC.getResolver('updateById'),
   communityRemoveById: deleteCommunityResolver,
+  swapCommunityManagers: swapCommunityManagersResolver,
 });
 
 // Unit
@@ -62,6 +65,7 @@ schemaComposer.Query.addFields({
   unitById: UnitTC.getResolver('findById'),
   unitMany: UnitTC.getResolver('findMany'),
   unitCount: UnitTC.getResolver('count'),
+  getAvailableUnits: getAvailableUnitsResolver,
 });
 
 schemaComposer.Mutation.addFields({

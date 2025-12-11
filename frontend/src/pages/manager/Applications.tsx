@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, FileText, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { GET_APPLICATIONS } from "@/graphql/queries"
 import { UPDATE_APPLICATION_STATUS, DELETE_APPLICATION, ACCEPT_APPLICATION } from "@/graphql/mutations"
+import { formatDate } from "@/lib/utils"
 
 export default function ManagerApplications() {
     const { data, loading, error, refetch } = useQuery<any>(GET_APPLICATIONS)
@@ -40,6 +41,10 @@ export default function ManagerApplications() {
 
     const handleApproveClick = (app: any) => {
         setSelectedApp(app)
+        // Pre-fill dates from application if available
+        if (app.move_in_date) setStartDate(new Date(app.move_in_date).toISOString().split('T')[0])
+        if (app.move_out_date) setEndDate(new Date(app.move_out_date).toISOString().split('T')[0])
+
         // Pre-fill rent and deposit from unit
         const rent = app.unit?.rent?.toString() || ""
         setMonthlyRent(rent)
@@ -112,6 +117,7 @@ export default function ManagerApplications() {
                                     <th className="px-4 py-3">Applicant</th>
                                     <th className="px-4 py-3">Unit</th>
                                     <th className="px-4 py-3">Date Applied</th>
+                                    <th className="px-4 py-3">Requested Dates</th>
                                     <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3 text-right">Actions</th>
                                 </tr>
@@ -134,7 +140,16 @@ export default function ManagerApplications() {
                                                 <div className="text-xs text-gray-500">{app.unit?.community?.name}</div>
                                             </td>
                                             <td className="px-4 py-3 text-gray-500">
-                                                {new Date(app.date_applied).toLocaleDateString()}
+                                                {formatDate(app.date_applied)}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-500 text-xs">
+                                                {app.move_in_date ? (
+                                                    <div>
+                                                        {formatDate(app.move_in_date)} -
+                                                        <br />
+                                                        {app.move_out_date ? formatDate(app.move_out_date) : 'N/A'}
+                                                    </div>
+                                                ) : "Not specified"}
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ring-1 ring-inset ${app.status === 'Approved' ? 'bg-green-50 text-green-700 ring-green-600/20' :

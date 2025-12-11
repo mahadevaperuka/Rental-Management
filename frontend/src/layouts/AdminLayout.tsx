@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom"
-import { LayoutDashboard, Building2, Users, Settings } from "lucide-react"
+import { LayoutDashboard, Building2, Users } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const sidebarItems = [
