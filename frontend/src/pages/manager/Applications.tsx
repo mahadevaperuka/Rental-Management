@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { CheckCircle, XCircle, FileText, Trash2 } from "lucide-react"
+import { CheckCircle, XCircle, FileText, Trash2, ArrowUpDown } from "lucide-react"
 import { useState } from "react"
 import { GET_APPLICATIONS } from "@/graphql/queries"
 import { UPDATE_APPLICATION_STATUS, DELETE_APPLICATION, ACCEPT_APPLICATION } from "@/graphql/mutations"
@@ -96,7 +96,13 @@ export default function ManagerApplications() {
     if (loading) return <div className="flex justify-center p-8">Loading applications...</div>
     if (error) return <div className="text-red-500 p-8">Error loading applications: {error.message}</div>
 
-    const applications = data?.applicationMany || []
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+
+    const applications = [...(data?.applicationMany || [])].sort((a: any, b: any) => {
+        const dateA = new Date(a.date_applied).getTime()
+        const dateB = new Date(b.date_applied).getTime()
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB
+    })
 
     return (
         <div className="space-y-6">
@@ -116,7 +122,15 @@ export default function ManagerApplications() {
                                 <tr>
                                     <th className="px-4 py-3">Applicant</th>
                                     <th className="px-4 py-3">Unit</th>
-                                    <th className="px-4 py-3">Date Applied</th>
+                                    <th
+                                        className="px-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                                        onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
+                                    >
+                                        <div className="flex items-center gap-1">
+                                            Date Applied
+                                            <ArrowUpDown className="h-3 w-3" />
+                                        </div>
+                                    </th>
                                     <th className="px-4 py-3">Requested Dates</th>
                                     <th className="px-4 py-3">Status</th>
                                     <th className="px-4 py-3 text-right">Actions</th>
