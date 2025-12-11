@@ -38,6 +38,7 @@ export default function ManagerApplications() {
     const [endDate, setEndDate] = useState("")
     const [monthlyRent, setMonthlyRent] = useState("")
     const [securityDeposit, setSecurityDeposit] = useState("")
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
     const handleApproveClick = (app: any) => {
         setSelectedApp(app)
@@ -95,8 +96,6 @@ export default function ManagerApplications() {
 
     if (loading) return <div className="flex justify-center p-8">Loading applications...</div>
     if (error) return <div className="text-red-500 p-8">Error loading applications: {error.message}</div>
-
-    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
     const applications = [...(data?.applicationMany || [])].sort((a: any, b: any) => {
         const dateA = new Date(a.date_applied).getTime()
