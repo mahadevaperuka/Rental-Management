@@ -11,6 +11,9 @@ import { COMPLETE_TEMP_PASSWORD } from "@/graphql/mutations"
 
 export default function ChangePassword() {
     const { data: session } = authClient.useSession()
+    // Check if the user is forced to change their password
+    const isForced = (session?.user as any)?.is_temp_password
+
     const [currentPassword, setCurrentPassword] = useState("")
     const [newPassword, setNewPassword] = useState("")
     const [confirmPassword, setConfirmPassword] = useState("")
@@ -45,20 +48,20 @@ export default function ChangePassword() {
             if (error) {
                 setError(error.message || "Failed to change password")
             } else {
-                // Password changed successfully, now clear the flag
-                if (session?.user?.email) {
+                // If this was a forced change, mark it as complete in our DB
+                if (isForced && session?.user?.email) {
                     await completeTempPassword({
                         variables: { email: session.user.email }
                     })
-                    // Force session refresh or just redirect? 
-                    // Redirecting might trigger the check again if session is stale.
-                    // We should probably reload the page or manually update session if possible.
-                    // But redirecting to dashboard should trigger a re-render/re-check.
-                    // If session is still stale, it might loop.
-                    // Let's try to reload the window to force session refresh from server.
+                }
+
+                // Redirect based on outcome
+                if (isForced) {
+                    // Force refresh for forced changes to update session
                     window.location.href = "/dashboard"
                 } else {
-                    navigate("/dashboard")
+                    // For voluntary changes, just navigate back
+                    navigate(-1)
                 }
             }
         } catch (err) {
@@ -73,15 +76,21 @@ export default function ChangePassword() {
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
             <Card className="w-full max-w-md">
                 <CardHeader>
-                    <CardTitle>Change Temporary Password</CardTitle>
+                    <CardTitle>
+                        {isForced ? "Change Temporary Password" : "Change Password"}
+                    </CardTitle>
                     <CardDescription>
-                        You are required to change your temporary password before continuing.
+                        {isForced
+                            ? "You are required to change your temporary password before continuing."
+                            : "Update your password below."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="current">Current Password (Temporary)</Label>
+                            <Label htmlFor="current">
+                                {isForced ? "Current Password (Temporary)" : "Current Password"}
+                            </Label>
                             <Input
                                 id="current"
                                 type="password"
@@ -113,17 +122,25 @@ export default function ChangePassword() {
                             />
                         </div>
                         {error && <div className="text-red-500 text-sm">{error}</div>}
-                        <Button type="submit" className="w-full" disabled={loading}>
-                            {loading ? "Changing Password..." : "Change Password"}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => navigate("/")}
-                        >
-                            Back to Home
-                        </Button>
+
+                        <div className="flex flex-col gap-2">
+                            <Button type="submit" className="w-full" disabled={loading}>
+                                {loading ? "Changing Password..." : "Change Password"}
+                            </Button>
+
+                            {!isForced && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full"
+                                    onClick={() => navigate(-1)}
+                                    disabled={loading}
+                                >
+                                    Cancel
+                                </Button>
+                            )}
+
+                        </div>
                     </form>
                 </CardContent>
             </Card>
