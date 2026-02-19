@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
-import { useMutation } from "@apollo/client/react";
-import { CHAT } from "@/graphql/mutations";
+// import { useMutation } from "@apollo/client/react";
+// import { CHAT } from "@/graphql/mutations";
 
 interface Message {
     role: 'user' | 'assistant';
@@ -19,15 +19,7 @@ export function ChatWidget() {
     const [inputValue, setInputValue] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const [sendMessage, { loading }] = useMutation(CHAT, {
-        onCompleted: (data: any) => {
-            setMessages(prev => [...prev, { role: 'assistant', content: data.chat.message }]);
-        },
-        onError: (error) => {
-            setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, something went wrong. Please try again." }]);
-            console.error(error);
-        }
-    });
+    const [loading, setLoading] = useState(false);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,7 +37,45 @@ export function ChatWidget() {
         setInputValue("");
         setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
 
-        await sendMessage({ variables: { message: userMsg } });
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:4000/api/chat',{
+                method: 'POST',
+                body: JSON.stringify({message: userMsg}),
+                credentials:'include'
+            });
+
+            if (!response.ok) throw new Error("Network is bad or no response")
+            if (!response.body) throw new Error("There's no Body")
+            
+            setLoading(false)
+            setMessages(prev => [...prev,{ role: 'assistant', content: '' }])
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    return;
+                }
+                const text = decoder.decode(value, {stream: true});
+                setMessages(prev => {
+                    const temp = [...prev]
+                    const lastIndex = temp.length - 1;
+                    temp[lastIndex] = {
+                        ...temp[lastIndex],
+                        content: temp[lastIndex].content + text
+                    }
+                    return temp;
+                })
+            }
+            
+        } catch (error) {
+            console.log(error)
+            setLoading(false)
+            setMessages(prev => [...prev,{role:"assistant" , content:"No response or error occured"} ])
+        }
     };
 
     return (

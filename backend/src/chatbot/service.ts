@@ -7,7 +7,7 @@ const ollama = new Ollama({ host: process.env.OLLAMA_HOST || 'http://127.0.0.1:1
 const MODEL = process.env.OLLAMA_MODEL || 'gemma3:4b';
 
 export class ChatbotService {
-    async processChat(user: any, message: string) {
+    async *processChat(user: any, message: string) {
         try {
             // 1. Classify Intent
             const intentName = await this.classifyIntent(message, user.role);
@@ -43,12 +43,30 @@ export class ChatbotService {
                 };
             }
 
-            // 3. Generate Summary
-            const summary = await this.generateSummary(message, result.data, intentName);
-            return {
-                message: summary,
-                data: result.data
-            };
+            const systemPrompt = `
+            You are a helpful assistant.
+            The user asked: "${message}"
+            The system retrieved the following data for intent "${intentName}":
+            ${JSON.stringify(result.data, null, 2)}
+
+            Please summarize this data in a friendly, natural language response.
+            Keep it concise. If the data is empty, say so politely.
+            Do not mention "JSON" or "data objects".
+        `;
+
+            const response = await ollama.chat({
+                model: MODEL,
+                messages: [
+                    { role: "system", content: systemPrompt }
+                ],
+                stream: true,
+            });
+
+            for await (const part of response){
+                yield part.message.content;
+            }
+            
+            
 
         } catch (error) {
             console.error("Chatbot Error:", error);
@@ -58,6 +76,8 @@ export class ChatbotService {
             };
         }
     }
+
+
 
     private async classifyIntent(message: string, role: string): Promise<string | null> {
         const availableIntents = Object.values(INTENTS).filter(intent => {

@@ -6,6 +6,8 @@ import { schema } from './schema.js';
 import mongoose from 'mongoose';
 import { config } from 'dotenv';
 import { auth } from './auth.js';
+import { streamText } from 'hono/streaming';
+import { chatbotService } from './chatbot/service.js';
 
 config();
 
@@ -23,6 +25,19 @@ app.all("/api/auth/*", async (c) => {
     const res = await auth.handler(c.req.raw);
     return res;
 });
+
+app.post('/api/chat', async (c) => {
+     const session = await auth.api.getSession({ headers: c.req.raw.headers });
+
+     const {message} = await c.req.json();
+     return streamText(c, async(stream)=>{
+        const chatData = chatbotService.processChat(session?.user,message);
+        for await ( const part of chatData){
+            await stream.write(part);
+        }
+     })
+
+})
 
 const server = new ApolloServer({
     schema,
