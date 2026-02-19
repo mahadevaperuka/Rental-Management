@@ -27,15 +27,19 @@ app.all("/api/auth/*", async (c) => {
 });
 
 app.post('/api/chat', async (c) => {
-     const session = await auth.api.getSession({ headers: c.req.raw.headers });
+    const session = await auth.api.getSession({ headers: c.req.raw.headers });
 
-     const {message} = await c.req.json();
-     return streamText(c, async(stream)=>{
-        const chatData = chatbotService.processChat(session?.user,message);
-        for await ( const part of chatData){
+    if (!session?.user) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { message } = await c.req.json();
+    return streamText(c, async (stream) => {
+        const chatData = chatbotService.processChat(session.user, message);
+        for await (const part of chatData) {
             await stream.write(part);
         }
-     })
+    })
 
 })
 

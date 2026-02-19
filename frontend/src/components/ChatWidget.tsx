@@ -39,27 +39,26 @@ export function ChatWidget() {
 
         setLoading(true);
         try {
-            const response = await fetch('http://localhost:4000/api/chat',{
+            const response = await fetch('http://localhost:4000/api/chat', {
                 method: 'POST',
-                body: JSON.stringify({message: userMsg}),
-                credentials:'include'
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: userMsg }),
+                credentials: 'include'
             });
 
-            if (!response.ok) throw new Error("Network is bad or no response")
-            if (!response.body) throw new Error("There's no Body")
-            
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+            if (!response.body) throw new Error("Response body is null")
+
             setLoading(false)
-            setMessages(prev => [...prev,{ role: 'assistant', content: '' }])
+            setMessages(prev => [...prev, { role: 'assistant', content: '' }])
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) {
-                    return;
-                }
-                const text = decoder.decode(value, {stream: true});
+                if (done) break;
+                const text = decoder.decode(value, { stream: true });
                 setMessages(prev => {
                     const temp = [...prev]
                     const lastIndex = temp.length - 1;
@@ -70,11 +69,11 @@ export function ChatWidget() {
                     return temp;
                 })
             }
-            
+
         } catch (error) {
-            console.log(error)
+            console.error(error)
             setLoading(false)
-            setMessages(prev => [...prev,{role:"assistant" , content:"No response or error occured"} ])
+            setMessages(prev => [...prev, { role: "assistant", content: "No response or error occured" }])
         }
     };
 
