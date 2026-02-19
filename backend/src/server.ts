@@ -14,7 +14,7 @@ config();
 const app = new Hono();
 
 app.use('/*', cors({
-    origin: ['http://localhost:5173'],
+    origin: (process.env.CORS_ORIGIN || 'http://localhost:5173').split(','),
     credentials: true,
     allowMethods: ['GET', 'POST', 'OPTIONS', 'PUT', 'DELETE'],
     allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
@@ -45,6 +45,7 @@ app.post('/api/chat', async (c) => {
 
 const server = new ApolloServer({
     schema,
+    introspection: process.env.NODE_ENV !== 'production',
 });
 
 await server.start();

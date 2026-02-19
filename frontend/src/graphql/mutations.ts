@@ -164,8 +164,8 @@ export const DELETE_UNIT = gql`
 `;
 
 export const COMPLETE_TEMP_PASSWORD = gql`
-  mutation CompleteTempPassword($email: String!) {
-  userCompleteTempPassword(email: $email) {
+  mutation CompleteTempPassword {
+  userCompleteTempPassword {
     _id
     is_temp_password
   }

@@ -49,10 +49,8 @@ export default function ChangePassword() {
                 setError(error.message || "Failed to change password")
             } else {
                 // If this was a forced change, mark it as complete in our DB
-                if (isForced && session?.user?.email) {
-                    await completeTempPassword({
-                        variables: { email: session.user.email }
-                    })
+                if (isForced) {
+                    await completeTempPassword()
                 }
 
                 // Redirect based on outcome

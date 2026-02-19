@@ -9,9 +9,7 @@ const MODEL = process.env.OLLAMA_MODEL || 'llama3.2';
 export class ChatbotService {
     async *processChat(user: any, message: string) {
         try {
-            // 1. Classify Intent
             const intentName = await this.classifyIntent(message, user.role);
-            console.log(`Classified intent: ${intentName}`);
 
             if (!intentName || !INTENTS[intentName as keyof typeof INTENTS]) {
                 yield "I'm sorry, I didn't understand that request. I can help with lease details, payments, maintenance, and more.";
@@ -20,7 +18,6 @@ export class ChatbotService {
 
             const intent = INTENTS[intentName as keyof typeof INTENTS];
 
-            // 2. Execute Query
             const variableValues = {
                 linked_id: user.linked_id?.toString()
             };
@@ -30,11 +27,9 @@ export class ChatbotService {
                 variableValues,
                 contextValue: {
                     session: { user },
-                    isServiceCall: true, // Bypass RBAC for internal chatbot queries
+                    isServiceCall: true,
                 }
             });
-
-            console.log("GraphQL result:", JSON.stringify(result.data, null, 2));
 
             if (result.errors) {
                 console.error("GraphQL Errors:", result.errors);
@@ -65,16 +60,12 @@ export class ChatbotService {
                 yield part.message.content;
             }
 
-
-
         } catch (error) {
             console.error("Chatbot Error:", error);
             yield "An unexpected error occurred.";
             return;
         }
     }
-
-
 
     private async classifyIntent(message: string, role: string): Promise<string | null> {
         const availableIntents = Object.values(INTENTS).filter(intent => {
@@ -106,29 +97,6 @@ export class ChatbotService {
 
         const content = response.message.content?.trim();
         return content === "UNKNOWN" ? null : content || null;
-    }
-
-    private async generateSummary(userMessage: string, data: any, intentName: string): Promise<string> {
-        const systemPrompt = `
-            You are a helpful assistant.
-            The user asked: "${userMessage}"
-            The system retrieved the following data for intent "${intentName}":
-            ${JSON.stringify(data, null, 2)}
-
-            Please summarize this data in a friendly, natural language response.
-            Keep it concise. If the data is empty, say so politely.
-            Do not mention "JSON" or "data objects".
-        `;
-
-        const response = await ollama.chat({
-            model: MODEL,
-            messages: [
-                { role: "system", content: systemPrompt }
-            ],
-            stream: false,
-        });
-
-        return response.message.content || "Here is the information you requested.";
     }
 }
 

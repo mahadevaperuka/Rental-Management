@@ -37,7 +37,7 @@ export const createUserAccountResolver = schemaComposer.createResolver({
 
         // For Admin and Manager, enforce temporary password
         if (role === 'Admin' || role === 'Manager') {
-            password = "temporary";
+            password = process.env.DEFAULT_TEMP_PASSWORD;
             is_temp_password = true;
         }
 
@@ -269,11 +269,10 @@ export const deleteUserAccountResolver = schemaComposer.createResolver({
 export const completeTempPasswordResolver = schemaComposer.createResolver({
     name: 'completeTempPassword',
     type: UserTC,
-    args: {
-        email: 'String!',
-    },
-    resolve: async ({ args }: { args: any }) => {
-        const { email } = args;
+    args: {},
+    resolve: async ({ context }: { context: any }) => {
+        const email = context.session?.user?.email;
+        if (!email) throw new Error("Unauthorized");
         try {
 
             const user = await UserModel.findOne({ email });
