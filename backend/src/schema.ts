@@ -97,7 +97,7 @@ schemaComposer.Query.addFields({
 
 // User Mutations — Admin only (removed dangerous bulk-ops: createMany, updateMany, removeMany)
 schemaComposer.Mutation.addFields({
-  userCreateAccount: createUserAccountResolver.withMiddlewares([requireRole('Admin')]),
+  userCreateAccount: createUserAccountResolver,
   userUpdateAccount: updateUserAccountResolver.withMiddlewares([requireRole('Admin')]),
   userDeleteAccount: deleteUserAccountResolver.withMiddlewares([requireRole('Admin')]),
   userCompleteTempPassword: completeTempPasswordResolver, // Any authenticated user (for their own password)
@@ -169,6 +169,9 @@ schemaComposer.Mutation.addFields({
 // Apply Global Auth Middleware LAST (after all fields are registered)
 [schemaComposer.Query, schemaComposer.Mutation].forEach(tc => {
   tc.getFieldNames().forEach(field => {
+    // Skip auth guard for public endpoints
+    if (field === 'userCreateAccount' || field === 'communityMany') return;
+
     const fc = tc.getFieldConfig(field);
     const next = fc.resolve;
     if (next) {

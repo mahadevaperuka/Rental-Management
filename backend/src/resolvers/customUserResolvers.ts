@@ -30,10 +30,20 @@ export const createUserAccountResolver = schemaComposer.createResolver({
         state: 'String',
         zip: 'String',
     },
-    resolve: async ({ args }: { args: any }) => {
+    resolve: async ({ args, context }: { args: any; context: any }) => {
         const { name, email, role, image, phone, dob, ssn, income, jobTitle, jobType, city, state, zip } = args;
         let { password } = args;
         let is_temp_password = false;
+
+        // Role validation: only Admins can create Admin/Manager accounts
+        const callerRole = context.session?.user?.role;
+        if ((role === 'Admin' || role === 'Manager') && callerRole !== 'Admin') {
+            throw new Error('Only administrators can create Admin or Manager accounts.');
+        }
+        // Public registration can only create Guest accounts
+        if (!callerRole && role !== 'Guest') {
+            throw new Error('Self-registration is limited to Guest accounts.');
+        }
 
         // For Admin and Manager, enforce temporary password
         if (role === 'Admin' || role === 'Manager') {
