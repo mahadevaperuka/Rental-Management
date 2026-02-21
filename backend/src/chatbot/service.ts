@@ -69,7 +69,7 @@ export class ChatbotService {
 
     private async classifyIntent(message: string, role: string): Promise<string | null> {
         const availableIntents = Object.values(INTENTS).filter(intent => {
-            if (role === 'Tenant') {
+            if (role === 'Tenant' || role === 'Guest') {
                 return intent.name.startsWith('GET_MY_') || intent.name === 'GET_COMMUNITY_INFO';
             } else if (role === 'Manager') {
                 return intent.name.startsWith('GET_') && !intent.name.startsWith('GET_MY_');

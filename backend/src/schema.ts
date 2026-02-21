@@ -62,20 +62,20 @@ schemaComposer.Query.addFields({
 
 // Lease Queries — Admin + Manager + Tenant (tenants query their own leases via filter)
 schemaComposer.Query.addFields({
-  leaseById: LeaseTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant')]),
-  leaseMany: LeaseTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant')]),
+  leaseById: LeaseTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest')]),
+  leaseMany: LeaseTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest')]),
 });
 
 // Payment Queries — Admin + Manager + Tenant
 schemaComposer.Query.addFields({
-  paymentById: PaymentTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant')]),
-  paymentMany: PaymentTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant')]),
+  paymentById: PaymentTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest')]),
+  paymentMany: PaymentTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest')]),
 });
 
 // Maintenance Queries — Admin + Manager + Tenant
 schemaComposer.Query.addFields({
-  maintenanceById: MaintenanceTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant')]),
-  maintenanceMany: MaintenanceTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant'), filterByManager]),
+  maintenanceById: MaintenanceTC.getResolver('findById').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest')]),
+  maintenanceMany: MaintenanceTC.getResolver('findMany').withMiddlewares([requireRole('Admin', 'Manager', 'Tenant', 'Guest'), filterByManager]),
 });
 
 // Admin Queries — Admin only
