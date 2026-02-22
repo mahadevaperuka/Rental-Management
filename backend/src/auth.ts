@@ -13,7 +13,7 @@ const db = client.db();
 
 export const auth = betterAuth({
     basePath: "/api/auth",
-    trustedOrigins: ["http://localhost:4000", "http://localhost:5173"],
+    trustedOrigins: (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:4000").split(','),
     logger: {
         level: "error",
     },

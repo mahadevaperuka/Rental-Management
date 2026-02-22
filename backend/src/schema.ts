@@ -9,7 +9,7 @@ import { PaymentTC } from './models/Payment.js';
 import { MaintenanceTC } from './models/Maintenance.js';
 import { AdminTC } from './models/Admin.js';
 import { ManagerTC } from './models/Manager.js';
-import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver, deleteCommunityResolver } from './resolvers/customUserResolvers.js';
+import { createUserAccountResolver, updateUserAccountResolver, completeTempPasswordResolver, deleteUserAccountResolver, deleteCommunityResolver, createGuestProfileResolver } from './resolvers/customUserResolvers.js';
 import { acceptApplicationResolver } from './resolvers/customApplicationResolvers.js';
 import { swapCommunityManagersResolver } from './resolvers/communityResolvers.js';
 import { getAvailableUnitsResolver } from './resolvers/customUnitResolvers.js';
@@ -97,10 +97,11 @@ schemaComposer.Query.addFields({
 
 // User Mutations — Admin only (removed dangerous bulk-ops: createMany, updateMany, removeMany)
 schemaComposer.Mutation.addFields({
-  userCreateAccount: createUserAccountResolver,
+  userCreateAccount: createUserAccountResolver.withMiddlewares([requireRole('Admin')]),
   userUpdateAccount: updateUserAccountResolver.withMiddlewares([requireRole('Admin')]),
   userDeleteAccount: deleteUserAccountResolver.withMiddlewares([requireRole('Admin')]),
   userCompleteTempPassword: completeTempPasswordResolver, // Any authenticated user (for their own password)
+  createGuestProfile: createGuestProfileResolver, // Any authenticated Guest
 });
 
 // Community Mutations — Admin only
@@ -170,7 +171,7 @@ schemaComposer.Mutation.addFields({
 [schemaComposer.Query, schemaComposer.Mutation].forEach(tc => {
   tc.getFieldNames().forEach(field => {
     // Skip auth guard for public endpoints
-    if (field === 'userCreateAccount' || field === 'communityMany') return;
+    if (field === 'communityMany') return;
 
     const fc = tc.getFieldConfig(field);
     const next = fc.resolve;

@@ -40,7 +40,7 @@ export default function AdminUsers() {
     const [createUser, { loading: creating }] = useMutation(CREATE_USER, {
         onCompleted: () => {
             setIsAddOpen(false)
-            setNewUser({ name: "", email: "", phone: "", password: "", role: "Manager" })
+            setNewUser({ name: "", email: "", phone: "", role: "Manager" })
             refetch()
         }
     })
@@ -71,7 +71,6 @@ export default function AdminUsers() {
         name: "",
         email: "",
         phone: "",
-        password: "",
         role: "Manager", // Default to Manager, and only Manager allowed
     })
 
@@ -83,7 +82,6 @@ export default function AdminUsers() {
                     name: newUser.name,
                     email: newUser.email,
                     phone: newUser.phone,
-                    password: newUser.password,
                     role: "Manager", // Enforce Manager
                 }
             })
@@ -464,16 +462,8 @@ export default function AdminUsers() {
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="password">Password</Label>
-                                        <Input
-                                            id="password"
-                                            type="password"
-                                            value="temporary"
-                                            disabled
-                                            placeholder="Temporary password will be set"
-                                        />
-                                        <p className="text-xs text-gray-500">
-                                            Managers are assigned a temporary password ('temporary') and must change it on first login.
+                                        <p className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md border text-center">
+                                            Managers are automatically assigned the secure temporary password defined in your server's <code>.env</code> file (<code>DEFAULT_TEMP_PASSWORD</code>). They will be forced to change it upon first login.
                                         </p>
                                     </div>
                                 </div>

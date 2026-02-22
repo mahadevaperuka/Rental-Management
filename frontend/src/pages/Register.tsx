@@ -6,26 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Link, useNavigate } from "react-router-dom"
 import { Loader2 } from "lucide-react"
-import { gql } from "@apollo/client"
 import { useMutation } from "@apollo/client/react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const CREATE_USER_ACCOUNT = gql`
-    mutation CreateUserAccount(
-        $name: String!, $email: String!, $password: String!, $role: String!, $phone: String
-        $dob: Date, $ssn: String, $income: Float, $jobTitle: String, $jobType: String, 
-        $city: String, $state: String, $zip: String
-    ) {
-        userCreateAccount(
-            name: $name, email: $email, password: $password, role: $role, phone: $phone
-            dob: $dob, ssn: $ssn, income: $income, jobTitle: $jobTitle, jobType: $jobType, 
-            city: $city, state: $state, zip: $zip
-        ) {
-            _id
-            email
-        }
-    }
-`;
+import { CREATE_GUEST_PROFILE } from "@/graphql/mutations"
 
 export default function Register() {
     const [name, setName] = useState("")
@@ -46,7 +30,7 @@ export default function Register() {
     const [error, setError] = useState<string | null>(null)
     const navigate = useNavigate()
 
-    const [createUser] = useMutation(CREATE_USER_ACCOUNT);
+    const [createProfile] = useMutation(CREATE_GUEST_PROFILE);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -60,12 +44,21 @@ export default function Register() {
         }
 
         try {
-            await createUser({
+            // 1. Create User via Better Auth (securely handles password)
+            // 'role' defaults to 'Guest' on the backend schema setting
+            const { error: suError } = await authClient.signUp.email({
+                email,
+                password,
+                name,
+            });
+
+            if (suError) {
+                throw new Error(suError.message || "Failed to create account securely.");
+            }
+
+            // 2. We are now logged in! Create their Tenant Profile via GraphQL
+            await createProfile({
                 variables: {
-                    name,
-                    email,
-                    password,
-                    role: "Guest", // Still Guest, but now with data
                     phone,
                     dob: dob ? new Date(dob) : null,
                     ssn,
@@ -78,19 +71,7 @@ export default function Register() {
                 }
             });
 
-            // Auto-login after successful creation
-            await authClient.signIn.email({
-                email,
-                password
-            }, {
-                onSuccess: () => {
-                    navigate("/dashboard")
-                },
-                onError: () => {
-                    // Start session failed but account created
-                    navigate("/login");
-                }
-            });
+            navigate("/dashboard")
 
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred");

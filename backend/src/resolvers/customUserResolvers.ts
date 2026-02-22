@@ -1,4 +1,5 @@
 import { schemaComposer } from 'graphql-compose';
+import crypto from 'crypto';
 import { UserTC } from '../models/User.js';
 import { CommunityTC } from '../models/Community.js';
 import { auth } from '../auth.js';
@@ -16,7 +17,6 @@ export const createUserAccountResolver = schemaComposer.createResolver({
     args: {
         name: 'String!',
         email: 'String!',
-        password: 'String!',
         role: 'String!',
         image: 'String',
         phone: 'String',
@@ -32,24 +32,16 @@ export const createUserAccountResolver = schemaComposer.createResolver({
     },
     resolve: async ({ args, context }: { args: any; context: any }) => {
         const { name, email, role, image, phone, dob, ssn, income, jobTitle, jobType, city, state, zip } = args;
-        let { password } = args;
-        let is_temp_password = false;
 
-        // Role validation: only Admins can create Admin/Manager accounts
+        // Role validation: ONLY Admins can use this endpoint to create Admin/Manager/Tenant accounts manually
         const callerRole = context.session?.user?.role;
-        if ((role === 'Admin' || role === 'Manager') && callerRole !== 'Admin') {
-            throw new Error('Only administrators can create Admin or Manager accounts.');
-        }
-        // Public registration can only create Guest accounts
-        if (!callerRole && role !== 'Guest') {
-            throw new Error('Self-registration is limited to Guest accounts.');
+        if (callerRole !== 'Admin') {
+            throw new Error('Only administrators can create accounts via this endpoint.');
         }
 
-        // For Admin and Manager, enforce temporary password
-        if (role === 'Admin' || role === 'Manager') {
-            password = process.env.DEFAULT_TEMP_PASSWORD;
-            is_temp_password = true;
-        }
+        // For all Admin-created accounts, enforce temporary password
+        const password = process.env.DEFAULT_TEMP_PASSWORD || crypto.randomUUID();
+        const is_temp_password = true;
 
         try {
             // 1. Create the User account first
@@ -118,6 +110,57 @@ export const createUserAccountResolver = schemaComposer.createResolver({
             throw new Error("Failed to create user account. Please check your inputs and try again.");
         }
     },
+});
+
+export const createGuestProfileResolver = schemaComposer.createResolver({
+    name: 'createGuestProfile',
+    type: UserTC,
+    args: {
+        phone: 'String!',
+        dob: 'Date!',
+        ssn: 'String!',
+        income: 'Float!',
+        jobTitle: 'String!',
+        jobType: 'String!',
+        city: 'String!',
+        state: 'String!',
+        zip: 'String!',
+    },
+    resolve: async ({ args, context }: { args: any; context: any }) => {
+        const user = context.session?.user;
+        if (!user) throw new Error("Unauthorized. Please log in first to create a profile.");
+
+        // We only allow this for users who are currently just 'Guest' and don't have a linked_id
+        const dbUser = await UserModel.findById(user.id);
+        if (!dbUser || dbUser.linked_id) {
+            throw new Error("Profile already exists or invalid user state.");
+        }
+
+        const tenant = await TenantModel.create({
+            name: user.name,
+            email: user.email,
+            phone: args.phone,
+            dob: args.dob,
+            ssn: args.ssn,
+            income: args.income,
+            jobTitle: args.jobTitle,
+            jobType: args.jobType,
+            presentAddress: {
+                city: args.city,
+                state: args.state,
+                zip: args.zip
+            },
+            joined_date: new Date()
+        });
+
+        await UserModel.findByIdAndUpdate(user.id, { linked_id: tenant._id, role: 'Guest' });
+
+        return {
+            ...user,
+            _id: user.id,
+            linked_id: tenant._id,
+        };
+    }
 });
 
 export const updateUserAccountResolver = schemaComposer.createResolver({

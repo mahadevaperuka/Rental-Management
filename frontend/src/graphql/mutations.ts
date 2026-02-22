@@ -12,8 +12,8 @@ export const UPDATE_USER = gql`
 `;
 
 export const CREATE_USER = gql`
-  mutation CreateUserAccount($name: String!, $email: String!, $password: String!, $role: String!, $phone: String) {
-    userCreateAccount(name: $name, email: $email, password: $password, role: $role, phone: $phone) {
+  mutation CreateUserAccount($name: String!, $email: String!, $role: String!, $phone: String) {
+    userCreateAccount(name: $name, email: $email, role: $role, phone: $phone) {
       _id
       name
       email
@@ -31,12 +31,27 @@ export const DELETE_USER = gql`
 `;
 
 export const CREATE_TENANT = gql`
-  mutation CreateTenantAccount($name: String!, $email: String!, $password: String!) {
-    userCreateAccount(name: $name, email: $email, password: $password, role: "Tenant") {
+  mutation CreateTenantAccount($name: String!, $email: String!) {
+    userCreateAccount(name: $name, email: $email, role: "Tenant") {
       _id
       name
       email
       role
+    }
+  }
+`;
+
+export const CREATE_GUEST_PROFILE = gql`
+  mutation CreateGuestProfile(
+    $phone: String!, $dob: Date!, $ssn: String!, $income: Float!,
+    $jobTitle: String!, $jobType: String!, $city: String!, $state: String!, $zip: String!
+  ) {
+    createGuestProfile(
+      phone: $phone, dob: $dob, ssn: $ssn, income: $income,
+      jobTitle: $jobTitle, jobType: $jobType, city: $city, state: $state, zip: $zip
+    ) {
+      _id
+      email
     }
   }
 `;
