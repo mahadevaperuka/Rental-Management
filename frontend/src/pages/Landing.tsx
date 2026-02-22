@@ -12,7 +12,10 @@ export default function Landing() {
     const { data, loading, error } = useQuery<any>(GET_LANDING_DATA)
 
     if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>
-    if (error) return <div className="text-red-500 p-8">Error loading data: {error.message}</div>
+    if (error) {
+        console.error("Landing page data error:", error);
+        return <div className="text-red-500 p-8 flex justify-center items-center min-h-screen">An error occurred while loading community data. Please try again later.</div>
+    }
 
     const communities = data?.communityMany || []
 

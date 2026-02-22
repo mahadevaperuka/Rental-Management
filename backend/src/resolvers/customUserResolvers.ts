@@ -112,7 +112,10 @@ export const createUserAccountResolver = schemaComposer.createResolver({
             };
         } catch (error: any) {
             console.error("Error creating user:", error);
-            throw new Error(error.message || "Failed to create user");
+            if (error.message && (error.message.includes('Only administrators') || error.message.includes('Self-registration'))) {
+                throw error;
+            }
+            throw new Error("Failed to create user account. Please check your inputs and try again.");
         }
     },
 });
